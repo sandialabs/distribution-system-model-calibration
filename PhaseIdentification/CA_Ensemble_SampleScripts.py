@@ -55,11 +55,11 @@ Input Data Formatting:
         only used to assigned the final phase predictions.  In practice, this
         field could even be omitted, the phase identification results from 
         CAEnsemble will still be grouped by phase, and the assignment of final
-        phase labels could be left for a post-processing step by the utiliyt.
+        phase labels could be left for a post-processing step by the utility.
         The dimensions of this matrix should be (1, customers).
         These are assumed to be the original, utility labels, which
         may contain some number of errors.  The sample data included with these
-        scripts has ~11% of phase labels injected with errors.  This can be 
+        scripts has ~9% of phase labels injected with errors.  This can be 
         seen by comparing this field with the entries in phaseLabelsTrue which
         contains the ground-truth phase labels
     phaseLabelsTrue: numpy array of int (1,customers) - This contains the 

@@ -71,7 +71,7 @@ phaseLabelsErrors: numpy array of int (1,customers) - the original utility phase
     labels of each customer in integer form.  1 - Phase A, 2 - Phase B, 
     3 - Phase C.  The length of the array should match in length and indexing 
     with the customer dimension of voltageInputCust.  These labels are assumed
-    to have erros in the labeling.  In the sampel data 31 customers have 
+    to have erros in the labeling.  In the sampel data 18 customers have 
     labels which are different from the labels in phaseLabelsTrue
     
 custIDInput: list of str (customers) - the customer IDs in string form for
@@ -90,7 +90,7 @@ import numpy as np
 from pathlib import Path
 
 
-# Custome Libraries
+# Custom Libraries
 import PhaseIdent_Utils as PIUtils
 import SensorMethod_Funcs as SensMethod
 
