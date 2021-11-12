@@ -54,7 +54,7 @@ import M2TFuncs
 # custIDInput: list of str (customers) - the list of customer IDs as strings
 # transLabelsTrue: numpy array of int (1,customers) - the transformer labels for each customer as integers.  This is the ground truth transformer labels
 # transLabelsErrors: numpy array of int (1,customers) - the transformer labels for each customer which may contain errors.
-    # In the sample data, customer_4 transformer was changed from 1 to 2 and customer_53 transformer was changed from 23 to 22
+    # In the sample data, customer_3 transformer was changed from 1 to 2 and customer_53 transformer was changed from 23 to 22
 # voltageInput: numpy array of float (measurements,customers) - the raw voltage AMI measurements for each customer in Volts
 # pDataInput: numpy array of float (measurements, customers) - the real power measurements for each customer in Watts
 # qDataInput: numpy array of float (measurements, customers) - the reactive power measurements for each customer in VAr
