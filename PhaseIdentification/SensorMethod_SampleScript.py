@@ -203,6 +203,7 @@ df['Original Phase Labels (with errors)'] = phaseLabelsErrorsFound[0,:]
 df['Predicted Phase Labels'] = predictedPhaseLabels[0,:]
 df['Actual Phase Labels'] = phaseLabelsFound[0,:]
 df.to_csv('outputs_SensorMethod.csv')
+print('Predicted phase labels written to outputs_SensorMethod.csv')
 
 # Confidence Score Plots
 PIUtils.PlotHistogramOfWinVotesConfScore(winVotesConfScore)
