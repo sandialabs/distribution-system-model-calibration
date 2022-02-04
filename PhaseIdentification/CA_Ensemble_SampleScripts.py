@@ -79,6 +79,7 @@ The indexing of each of the input data must match, i.e. voltageInput[:,1] must
 # Import - Python Libraries
 import numpy as np
 from pathlib import Path
+import pandas as pd
 
 # Import - Custom Libraries
 import CA_Ensemble_Funcs as CAE
@@ -141,9 +142,11 @@ finalClusterLabels,noVotesIndex,noVotesIDs,clusteredIDs,aggWM,custWindowCounts =
 if len(noVotesIndex) != 0:
     clusteredPhaseLabels = np.delete(phaseLabelsErrors,noVotesIndex,axis=1)
     clusteredTruePhaseLabels = np.delete(phaseLabelsTrue,noVotesIndex,axis=1)
+    custIDFound = list(np.delete(np.array(custIDInput),noVotesIndex))
 else:
     clusteredPhaseLabels = phaseLabelsErrors
     clusteredTruePhaseLabels = phaseLabelsTrue
+    custIDFound = custIDInput
     
 # Use the phase labels to assign final phase predictions based on the majority vote in the final clusters
 # This assumes that phase labels are both available and believed to be reasonably accurate.
@@ -167,6 +170,14 @@ print('There are '+ str(incorrectCustCount) + ' incorrectly predicted customers'
 print('There are ' + str(len(noVotesIndex)) + ' customers not predicted due to missing data')
 
 
+
+# Write outputs to csv file
+df = pd.DataFrame()
+df['customer ID'] = custIDFound
+df['Original Phase Labels (with errors)'] = clusteredPhaseLabels[0,:]
+df['Predicted Phase Labels'] = predictedPhases[0,:]
+df['Actual Phase Labels'] = clusteredTruePhaseLabels[0,:]
+df.to_csv('outputs_CAEnsMethod.csv')
 
 
 
