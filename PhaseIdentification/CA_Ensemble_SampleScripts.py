@@ -178,7 +178,7 @@ df['Original Phase Labels (with errors)'] = clusteredPhaseLabels[0,:]
 df['Predicted Phase Labels'] = predictedPhases[0,:]
 df['Actual Phase Labels'] = clusteredTruePhaseLabels[0,:]
 df.to_csv('outputs_CAEnsMethod.csv')
-
+print('Predicted phase labels written to outputs_CAEnsMethod.csv')
 
 
 
