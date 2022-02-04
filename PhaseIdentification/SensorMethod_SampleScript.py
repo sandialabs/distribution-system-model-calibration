@@ -88,6 +88,7 @@ custIDInput: list of str (customers) - the customer IDs in string form for
 import sys
 import numpy as np
 from pathlib import Path
+import pandas as pd
 
 
 # Custom Libraries
@@ -195,7 +196,13 @@ print('Results compared to the ground truth phase labels:')
 print('There are ' + str(len(orgDiff)) + ' customers with incorrect phase labels')
 print('The accuracy of the predicted labels compared to the ground truth is ' + str(accuracy) + '%')
 
-
+# Write outputs to csv file
+df = pd.DataFrame()
+df['customer ID'] = custIDFound
+df['Original Phase Labels (with errors)'] = phaseLabelsErrorsFound[0,:]
+df['Predicted Phase Labels'] = predictedPhaseLabels[0,:]
+df['Actual Phase Labels'] = phaseLabelsFound[0,:]
+df.to_csv('outputs_SensorMethod.csv')
 
 # Confidence Score Plots
 PIUtils.PlotHistogramOfWinVotesConfScore(winVotesConfScore)
