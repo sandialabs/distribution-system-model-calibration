@@ -40,6 +40,7 @@ import numpy as np
 #import datetime
 #from copy import deepcopy
 from pathlib import Path
+import pandas as pd
 
 # Import custom libraries
 import M2TUtils
@@ -159,6 +160,24 @@ print('Ground Truth Results')
 print('Transformers with incorrect groupings:')
 print(incorrectTrans)
 # In the sample data, these will be empty because all customers were correctly grouped together by their service transformer.  
+
+
+
+# Write output to a csv file
+df = pd.DataFrame()
+df['customer ID'] = custIDInput
+df['Original Transformer Labels (with errors)'] = transLabelsErrors[0,:]
+df['Predicted Transformer Labels'] = predictedTransLabels[0,:]
+df['Actual Transformer Labels'] = transLabelsTrue[0,:]
+df.to_csv('outputs_PredictedTransformerLabels.csv')
+print('Predicted transformer labels written to outputs_PredictedTransformerLabels.csv')
+
+df = pd.DataFrame()
+df['Ranked Flagged Transformers'] = flaggedTrans
+df.to_csv('outputs_RankedFlaggedTransformers.csv')
+print('Flagged and ranked transformers written to outputs_RankedFlaggedTransformers.csv')
+
+
 
 
 
