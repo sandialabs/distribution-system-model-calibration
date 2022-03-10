@@ -218,7 +218,7 @@ def CAEnsemble(voltage,kVector,kFinal,custID,windowSize,lowWindowsThresh=4,print
 
     # Loop through each window in the available data
     for ensCtr in range(0,ensTotal):
-        print('ensCtr = ' + str(ensCtr))
+        print('Ensemble Progress: ' + str(ensCtr) + '/' + str(ensTotal))
         #Select the next time series window and remove customers with missing data in that window
         windowDistances = PIUtils.GetVoltWindow(voltage,windowSize,ensCtr)
         currentDistances,currentIDs = PIUtils.CleanVoltWindowNoLabels(deepcopy(windowDistances), deepcopy(custID))
@@ -263,7 +263,7 @@ def CAEnsemble(voltage,kVector,kFinal,custID,windowSize,lowWindowsThresh=4,print
     
     if aggWM.shape == (0,0):
         print('Error!  All customers were eliminated from all windows, and the algorithm could not continue.  This is due to missing data in the customers datastreams.  The distribution of missing data was such that there were instances of missing data in every window for every customer.  You could try reducing the window size, but beware that there still may not be many viable windows ')
-        return (-1,-1,-1,-1,-1)
+        return (-1,-1,-1,-1,-1,-1)
     #Normalize aggWM - This is done because each customer would have had different numbers of windows due to missing data, the normalization is done by dividing each cell by the number of windows that pair of customers was both present
     windowCtr[windowCtr==0]=0.0001 #This prevents divide by zero, the aggWM should already be zero in the locations where windowCtr is 0, so 0 will be the end result in that case anway
     aggWM_Norm = np.divide(aggWM,windowCtr)
@@ -283,3 +283,9 @@ def CAEnsemble(voltage,kVector,kFinal,custID,windowSize,lowWindowsThresh=4,print
         
     return finalClusterLabels,noVotesIndex,noVotesIDs,clusteredIDs,aggWM_Norm,custWindowCounts
 # End of CAEnsemble
+
+
+
+
+
+

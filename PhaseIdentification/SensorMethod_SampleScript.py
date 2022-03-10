@@ -166,7 +166,7 @@ else:
 
 
 # Determine customers with different predicted phase labels than predicted 
-diffIndices = np.where(predictedPhaseLabels!=phaseLabelsErrors)[1]
+diffIndices = np.where(predictedPhaseLabels!=phaseLabelsErrorsFound)[1]
 diffIDs = list(np.array(custIDFound)[diffIndices])
 newPhaseLabels = np.expand_dims(predictedPhaseLabels[0,diffIndices],axis=0)
 orgDiffPhaseLabels = np.expand_dims(phaseLabelsErrors[0,diffIndices],axis=0)
@@ -196,12 +196,48 @@ print('Results compared to the ground truth phase labels:')
 print('There are ' + str(len(orgDiff)) + ' customers with incorrect phase labels')
 print('The accuracy of the predicted labels compared to the ground truth is ' + str(accuracy) + '%')
 
+
+# Create output list which includes any customers omitted from the analysis due to missing data 
+# Those customers will be at the end of the list and have a predicted phase and silhouette coefficient of -99 to indicate that they were not included in the analysis
+if len(noVotesIndex) !=0:
+        phaseLabelsOrg_FullList, phaseLabelsPred_FullList, \
+            phaseLabelsTrue_FullList,custID_FullList, \
+                ccSep_FullList, winVotes_FullList, \
+                    sensVotes_FullList, combConf_FullList = PIUtils.CreateFullListCustomerResults_SensMeth(phaseLabelsErrorsFound, \
+                                                                                                        phaseLabelsErrors,\
+                                                                                                            phaseLabelsTrue, \
+                                                                                                            custIDFound, \
+                                                                                                                custIDInput, \
+                                                                                                                noVotesIDs,\
+                                                                                                                    predictedPhaseLabels,\
+                                                                                                                    ccSeparation,\
+                                                                                                                        winVotesConfScore,\
+                                                                                                                        sensVotesConfScore,\
+                                                                                                                            confScoreCombined)
+
+
+else:
+    phaseLabelsOrg_FullList = phaseLabelsErrors
+    phaseLabelsPred_FullList = predictedPhaseLabels
+    phaseLabelsTrue_FullList = phaseLabelsTrue
+    custID_FullList = custIDInput
+    ccSep_FullList = ccSeparation
+    winVotes_FullList = winVotesConfScore
+    sensVotes_FullList = sensVotesConfScore
+    combConf_FullList = confScoreCombined
+
+
+
 # Write outputs to csv file
 df = pd.DataFrame()
-df['customer ID'] = custIDFound
-df['Original Phase Labels (with errors)'] = phaseLabelsErrorsFound[0,:]
-df['Predicted Phase Labels'] = predictedPhaseLabels[0,:]
-df['Actual Phase Labels'] = phaseLabelsFound[0,:]
+df['customer ID'] = custID_FullList
+df['Original Phase Labels (with errors)'] = phaseLabelsOrg_FullList[0,:]
+df['Predicted Phase Labels'] = phaseLabelsPred_FullList[0,:]
+df['Actual Phase Labels'] = phaseLabelsTrue_FullList[0,:]
+df['Correlation Coefficient Separation Score'] = ccSep_FullList
+df['Window Voting Confidence Score'] = winVotes_FullList
+df['Sensor Voting Confidence Score'] = sensVotes_FullList
+df['Combined Confidence Score'] = combConf_FullList
 df.to_csv('outputs_SensorMethod.csv')
 print('Predicted phase labels written to outputs_SensorMethod.csv')
 

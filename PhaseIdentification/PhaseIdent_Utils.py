@@ -844,11 +844,293 @@ def PlotHistogramOfCCSeparation(ccSeparation,xLim=0.2,savePath=-1):
 
 
 
+def CalculatePlot_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClusterLabels,predictedPhases,kFinal,savePath=-1):
+    """ This function takes the results from running the Ensemble Spectral Cluster
+        Phase Identification algorithm, calculates a modified version of the
+        Silhouette Score for each customer and plots a histogram. 
+        
+        The Silhouette Coefficient/Score is well-established and further details
+        can be found in P.J. Rousseeuw, "Silhouettes: a graphical aid to the 
+        interpretation and validation of cluster analysis".  Journal of Computational
+        and Applied Mathematics, Jun 1986. 
+        General definition of the Silhouette Coefficient:
+            s = (b-a) / max(a,b)
+            a: The mean distance between a sample and all other points in the same cluster
+            b:The mean distance between a sample and all other points in the next nearest cluster
+        
+        This function implements a phase-aware version of the silhouette 
+        coefficient, where the next nearest cluster for b is required to be a cluster
+        predicted to be a different phase from the cluster of the current sample.  
+        This provides a more informative coefficient for this use case.  
+            
+
+    Parameters
+    ---------
+        caMatrix: ndarray of float (customers,customers) - the co-association
+            matrix produced by the spectral clustering ensemble.  This is an
+            affinity matrix.  Note that the indexing of all variables must
+            match in customer order.
+        clusteredIDs: list of str - the list of customer ids for which a predicted
+            phase was produced
+        finalClusterLabels: list of int - the integer cluster label for each 
+            customer
+        predictedPhases: ndarray of int (1,customers) - the integer predicted
+            phase label for each customer
+        kFinal: int - the number of final clusters
+        savePath: str or pathlib object - the path to save the histogram 
+            figure.  If none is specified the figure is saved in the current
+            directory
+                
+    Returns
+    -------
+        allSC: list of float - the silhouette coefficients for each customer
+                
+            """
+        
+    aggWMDist = 1 - caMatrix   
+    allSC = []
+    # Loop through each customer to calculate individual silhouette coefficients
+    for custCtr in range(0,len(clusteredIDs)):
+        currCluster = finalClusterLabels[custCtr]
+        clusterPhase = predictedPhases[0,custCtr]
+        # Find all customers in the same cluster as current customer and calculate the value for a
+        currInClustIndices = np.where(finalClusterLabels==currCluster)[0]
+        a = np.mean(aggWMDist[custCtr,currInClustIndices])
+        allBs = []
+        allBsAff = []
+        allClusterPhases = []
+        # Loop through the other clusters and calculate the value for b for each cluster, relative to the current customer
+        for clustCtr in range(0,kFinal):
+            if clustCtr == currCluster:
+                allBs.append(1)
+                allBsAff.append(0)
+                allClusterPhases.append(clusterPhase)
+            else:
+                indices = np.where(finalClusterLabels == clustCtr)[0]
+                currB = np.mean(aggWMDist[custCtr,indices])
+                currBAff = np.mean(caMatrix[custCtr,indices])
+                allBs.append(currB)
+                allBsAff.append(currBAff)
+                currPhase = predictedPhases[0,indices[0]]
+                allClusterPhases.append(currPhase)
+        # Find the next closest cluster predicted to be a different phase from the current customers cluster
+        sortedBs = np.sort(np.array(allBs))
+        argsortedBs = np.argsort(np.array(allBs))
+        argsortedPhases = np.array(allClusterPhases)[argsortedBs]
+        minCtr = 0
+        while (argsortedPhases[minCtr] == clusterPhase) and (sortedBs[minCtr] != 1):
+            minCtr = minCtr + 1
+        nextClosestDiffPhase = argsortedPhases[minCtr]
+        nextClosestDiffB = sortedBs[minCtr]
+        b = sortedBs[minCtr]
+        # Calculate Silhouette Coefficient
+        s = (b-a) / max(a,b)
+        allSC.append(s)
+    # Plot and save histogram
+    plt.figure(figsize=(12,9))
+    sns.histplot(allSC)
+    plt.xlabel('Modified Silhouette Score (values < 0.2 should be considered low confidence)', fontweight = 'bold',fontsize=15)
+    plt.ylabel('Number of Customers', fontweight = 'bold',fontsize=20)
+    plt.title('Histogram of Silhouette Coefficients (Larger values indicate higher confidence in phase predictions)',fontweight='bold',fontsize=12)
+    plt.tight_layout()
+    #plt.show()
+    figName =  'ModifiedSC_HIST.png' 
+    
+    if type(savePath) != int:
+        plt.savefig(Path(savePath,figName))
+    else:
+        plt.savefig(figName)
+        
+    
+    return allSC
+# End of CalculatePlot_ModifiedSilhouetteCoefficients Function   
 
 
 
 
 
+
+def CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsOriginal,phaseLabelsTrue,clusteredIDs,custID,noVotesIDs,predictedPhases,allSC):
+    """ This function takes the results from the co-association matrix ensemble
+            and adds back the customers which were omitted due to missing data.
+            Those customers are given a predictedPhase and silhouette coefficient
+            of -99 to indicate that they were not processed.  
+            
+
+    Parameters
+    ---------
+        clusteredPhaseLabels: ndarray of int (1,clustered customers) - the 
+            original phase labels for the customers processed by the phase
+            identification algorithm.  These phase labels may contain errors. 
+        phaseLabelsOriginal: ndarray of int (1,customers) - the full list of
+            original phase labels.  These phase labels may contain errors.
+        phaseLabelsTrue: ndarray of int (1,customers) - the full list of the
+            true phase labels for each customer
+        clusteredIDs: list of str - the list of customer ids for which a predicted
+            phase was produced
+        custID: list of str - the complete list of customer ids
+        noVotesIDs: list of str - the list of customers ids which were omitted
+            due to missing data
+        predictedPhases: ndarray of int (1,clustered customers) - the integer predicted
+            phase label for each customer
+        allSC: list of float - the modified silhouette coefficients for each 
+            customers included in the results
+
+    Returns
+    -------
+        phaseLabelsOrg_FullList: ndarray of int (1,customers) - the complete
+            list of the original phase labels.  Customers which were omitted
+            due to missing data are moved to the end of the list
+        phaseLabelsPred_FullList: ndarray of int (1,customers) - the complete
+            list of predicted phase labels.  Customers which were omitted 
+            due to missing data are moved to the end of the list and given
+            a predicted label of -99 to indicate they were not included
+        phaseLabelsTrue_FullList: ndarray of int - the full list of true
+            phase labels for each customer.  The customers omitted from the
+            results are moved to the end of the array
+        custID_FullList: list of str - the list of customer ids with customers
+            omitted due to missing data moved to the end of the list
+        allSC_FullList: list of float - the list of silhouette coefficients.
+            Customers omitted due to missing data are added to the end and given
+            a value of -99 to indicate they were not included in the results
+                
+            """
+        
+    numCust = phaseLabelsTrue.shape[1]
+    numClusteredCust = len(clusteredIDs)
+    
+    phaseLabelsOrg_FullList = np.zeros((1,numCust),dtype=int)
+    phaseLabelsPred_FullList = np.zeros((1,numCust),dtype=int)
+    phaseLabelsTrue_FullList = np.zeros((1,numCust),dtype=int)
+    custID_FullList = list(deepcopy(clusteredIDs))
+    allSC_FullList = deepcopy(allSC)
+
+    phaseLabelsPred_FullList[0,0:numClusteredCust] = predictedPhases
+    
+    # Reshape customers included in the results
+    for custCtr in range(0,numClusteredCust):
+        currID = clusteredIDs[custCtr]
+        index = custID.index(currID)
+        phaseLabelsOrg_FullList[0,custCtr] = phaseLabelsOriginal[0,index]
+        phaseLabelsTrue_FullList[0,custCtr] = phaseLabelsTrue[0,index]
+        
+    # Add the omitted customers
+    for custCtr in range(0,len(noVotesIDs)):
+        currID = noVotesIDs[custCtr]
+        index = custID.index(currID)
+        phaseLabelsOrg_FullList[0,(custCtr+numClusteredCust)] = phaseLabelsOriginal[0,index]
+        phaseLabelsTrue_FullList[0,(custCtr+numClusteredCust)] = phaseLabelsTrue[0,index]
+        
+        phaseLabelsPred_FullList[0,(custCtr+numClusteredCust)] = -99
+        custID_FullList.append(currID)
+        allSC_FullList.append(-99)
+
+    return phaseLabelsOrg_FullList, phaseLabelsPred_FullList, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList
+
+# End of CreateFullListCustomerResults_CAEns
+
+
+
+def CreateFullListCustomerResults_SensMeth(clusteredPhaseLabels,phaseLabelsOriginal, 
+                                           phaseLabelsTrue,clusteredIDs,custID,noVotesIDs,  
+                                           predictedPhases,ccSeparation, winVotesConf, 
+                                           sensVotesConf,confScoreCombined):
+    """ This function takes the results from the co-association matrix ensemble
+            and adds back the customers which were omitted due to missing data.
+            Those customers are given a predictedPhase and silhouette coefficient
+            of -99 to indicate that they were not processed.  
+            
+
+    Parameters
+    ---------
+        clusteredPhaseLabels: ndarray of int (1,clustered customers) - the 
+            original phase labels for the customers processed by the phase
+            identification algorithm.  These phase labels may contain errors. 
+        phaseLabelsOriginal: ndarray of int (1,customers) - the full list of
+            original phase labels.  These phase labels may contain errors.
+        phaseLabelsTrue: ndarray of int (1,customers) - the full list of the
+            true phase labels for each customer
+        clusteredIDs: list of str - the list of customer ids for which a predicted
+            phase was produced
+        custID: list of str - the complete list of customer ids
+        noVotesIDs: list of str - the list of customers ids which were omitted
+            due to missing data
+        predictedPhases: ndarray of int (1,clustered customers) - the integer predicted
+            phase label for each customer
+        ccSeparation: list of float - the Correlation Coefficient Separation 
+            score for each customer
+        winVotesConf: list of float - the Window Voting Confidence Score for 
+            each customer
+        sensVotesConf: list of float - the Sensor Voting Confidence Score for
+            each customer
+        confScoreCombined: list of float - the Combined Confidence Score for
+            each customer
+
+    Returns
+    -------
+        phaseLabelsOrg_FullList: ndarray of int (1,customers) - the complete
+            list of the original phase labels.  Customers which were omitted
+            due to missing data are moved to the end of the list
+        phaseLabelsPred_FullList: ndarray of int (1,customers) - the complete
+            list of predicted phase labels.  Customers which were omitted 
+            due to missing data are moved to the end of the list and given
+            a predicted label of -99 to indicate they were not included
+        phaseLabelsTrue_FullList: ndarray of int - the full list of true
+            phase labels for each customer.  The customers omitted from the
+            results are moved to the end of the array
+        custID_FullList: list of str - the list of customer ids with customers
+            omitted due to missing data moved to the end of the list
+        ccSep_FullList: list of float - the list of customer CC Separation
+            Score with customers omitted due to missing data moved to the end 
+            of the list and given a value of -99
+        winVotes_FullList: list of float - the list of customer Window Voting
+            Scores with customers omitted due to missing data moved to the end
+            of the list and given a value of -99
+        sensVotes_FullList: list of float - the list of Sensor Voting Scores
+            with customers omitted due to missing data moved to the end of the
+            list and given a value of -99
+        combConf_FullList: list of float - the list of Combined Confidence
+            Scores for each custome with customers omitted due to missing dat
+            moved to the end of the list and given a value of -99.
+                
+            """
+        
+    numCust = phaseLabelsTrue.shape[1]
+    numClusteredCust = len(clusteredIDs)
+    
+    phaseLabelsOrg_FullList = np.zeros((1,numCust),dtype=int)
+    phaseLabelsPred_FullList = np.zeros((1,numCust),dtype=int)
+    phaseLabelsTrue_FullList = np.zeros((1,numCust),dtype=int)
+    custID_FullList = list(deepcopy(clusteredIDs))
+    ccSep_FullList = deepcopy(ccSeparation)
+    winVotes_FullList = deepcopy(winVotesConf)
+    sensVotes_FullList = deepcopy(sensVotesConf)
+    combConf_FullList = deepcopy(confScoreCombined)
+
+    phaseLabelsPred_FullList[0,0:numClusteredCust] = predictedPhases
+    
+    # Reshape customers included in the results
+    for custCtr in range(0,numClusteredCust):
+        currID = clusteredIDs[custCtr]
+        index = custID.index(currID)
+        phaseLabelsOrg_FullList[0,custCtr] = phaseLabelsOriginal[0,index]
+        phaseLabelsTrue_FullList[0,custCtr] = phaseLabelsTrue[0,index]
+        
+    # Add the omitted customers
+    for custCtr in range(0,len(noVotesIDs)):
+        currID = noVotesIDs[custCtr]
+        index = custID.index(currID)
+        phaseLabelsOrg_FullList[0,(custCtr+numClusteredCust)] = phaseLabelsOriginal[0,index]
+        phaseLabelsTrue_FullList[0,(custCtr+numClusteredCust)] = phaseLabelsTrue[0,index]
+        
+        phaseLabelsPred_FullList[0,(custCtr+numClusteredCust)] = -99
+        custID_FullList.append(currID)
+        ccSep_FullList.append(-99)
+        winVotes_FullList.append(-99)
+        sensVotes_FullList.append(-99)
+        combConf_FullList.append(-99)
+
+    return phaseLabelsOrg_FullList, phaseLabelsPred_FullList, phaseLabelsTrue_FullList,custID_FullList, ccSep_FullList, winVotes_FullList,sensVotes_FullList,combConf_FullList
 
 
 

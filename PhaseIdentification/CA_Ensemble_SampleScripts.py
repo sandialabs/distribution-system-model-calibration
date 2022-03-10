@@ -127,7 +127,7 @@ vNDV = PIUtils.CalcDeltaVoltage(vNorm)
 #   regulators, or other topology issues may require tuning of this parameter.
 #   This could be done using silhouette score analysis.  7 is likely a good
 #   place to start with this parameter.
-kFinal=7 
+kFinal=7
 
 # kVector is the number of clusters used internally by the algorithm in each 
 #   window.  
@@ -136,7 +136,7 @@ kVector =[6,12,15,30]
 windowSize = 384
 
 # This is the primary phase identification function - See documentation in CA_Ensemble_Funcs.py for details on the inputs/outputs
-finalClusterLabels,noVotesIndex,noVotesIDs,clusteredIDs,aggWM,custWindowCounts = CAE.CAEnsemble(vNDV,kVector,kFinal,custIDInput,windowSize)
+finalClusterLabels,noVotesIndex,noVotesIDs,clusteredIDs,caMatrix,custWindowCounts = CAE.CAEnsemble(vNDV,kVector,kFinal,custIDInput,windowSize)
 
 # Remove any omitted customers from the list of phase labels
 if len(noVotesIndex) != 0:
@@ -147,6 +147,7 @@ else:
     clusteredPhaseLabels = phaseLabelsErrors
     clusteredTruePhaseLabels = phaseLabelsTrue
     custIDFound = custIDInput
+
     
 # Use the phase labels to assign final phase predictions based on the majority vote in the final clusters
 # This assumes that phase labels are both available and believed to be reasonably accurate.
@@ -170,14 +171,29 @@ print('There are '+ str(incorrectCustCount) + ' incorrectly predicted customers'
 print('There are ' + str(len(noVotesIndex)) + ' customers not predicted due to missing data')
 
 
+# Calculate and Plot the confidence scores - Modified Silhouette Coefficients
+allSC = PIUtils.CalculatePlot_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClusterLabels,predictedPhases,kFinal)
+
+# Create output list which includes any customers omitted from the analysis due to missing data 
+# Those customers will be at the end of the list and have a predicted phase and silhouette coefficient of -99 to indicate that they were not included in the analysis
+if len(noVotesIndex) !=0:
+        phaseLabelsOrg_FullList, phaseLabelsPred_FullList, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,phaseLabelsTrue,clusteredIDs,custIDInput,noVotesIDs,predictedPhases,allSC)
+else:
+    phaseLabelsOrg_FullList = phaseLabelsErrors
+    phaseLabelsPred_FullList = predictedPhases
+    phaseLabelsTrue_FullList = phaseLabelsTrue
+    custID_FullList = custIDInput
+    allSC_FullList = allSC    
 
 # Write outputs to csv file
 df = pd.DataFrame()
-df['customer ID'] = custIDFound
-df['Original Phase Labels (with errors)'] = clusteredPhaseLabels[0,:]
-df['Predicted Phase Labels'] = predictedPhases[0,:]
-df['Actual Phase Labels'] = clusteredTruePhaseLabels[0,:]
+df['customer ID'] = custID_FullList
+df['Original Phase Labels (with errors)'] = phaseLabelsOrg_FullList[0,:]
+df['Predicted Phase Labels'] = phaseLabelsPred_FullList[0,:]
+df['Actual Phase Labels'] = phaseLabelsTrue_FullList[0,:]
+df['Confidence Score'] = allSC_FullList
 df.to_csv('outputs_CAEnsMethod.csv')
+print('')
 print('Predicted phase labels written to outputs_CAEnsMethod.csv')
 
 
