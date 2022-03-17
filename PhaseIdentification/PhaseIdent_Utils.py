@@ -844,10 +844,10 @@ def PlotHistogramOfCCSeparation(ccSeparation,xLim=0.2,savePath=-1):
 
 
 
-def CalculatePlot_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClusterLabels,predictedPhases,kFinal,savePath=-1):
+def CalculatePlot_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClusterLabels,predictedPhases,kFinal):
     """ This function takes the results from running the Ensemble Spectral Cluster
         Phase Identification algorithm, calculates a modified version of the
-        Silhouette Score for each customer and plots a histogram. 
+        Silhouette Score for each customer.
         
         The Silhouette Coefficient/Score is well-established and further details
         can be found in P.J. Rousseeuw, "Silhouettes: a graphical aid to the 
@@ -877,9 +877,6 @@ def CalculatePlot_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClus
         predictedPhases: ndarray of int (1,customers) - the integer predicted
             phase label for each customer
         kFinal: int - the number of final clusters
-        savePath: str or pathlib object - the path to save the histogram 
-            figure.  If none is specified the figure is saved in the current
-            directory
                 
     Returns
     -------
@@ -926,6 +923,30 @@ def CalculatePlot_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClus
         # Calculate Silhouette Coefficient
         s = (b-a) / max(a,b)
         allSC.append(s)
+
+    return allSC
+# End of Calculate_ModifiedSilhouetteCoefficients Function   
+
+
+
+def Plot_ModifiedSilhouetteCoefficients(allSC,savePath=-1):
+    """ This function takes the results from the 
+        Calculate_ModifiedSilhouetteCoefficients function to plot and save
+        a histogram of the Modified Silhouette Coefficients which act as a 
+        confidence score.
+
+    Parameters
+    ---------
+        allSC: list of float - the silhouette coefficients for each customer
+        savePath: str or pathlib object - the path to save the histogram 
+            figure.  If none is specified the figure is saved in the current
+            directory        
+                
+    Returns
+    -------
+        None
+            """
+        
     # Plot and save histogram
     plt.figure(figsize=(12,9))
     sns.histplot(allSC)
@@ -940,11 +961,7 @@ def CalculatePlot_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClus
         plt.savefig(Path(savePath,figName))
     else:
         plt.savefig(figName)
-        
-    
-    return allSC
-# End of CalculatePlot_ModifiedSilhouetteCoefficients Function   
-
+# End of Plot_ModifiedSilhouetteCoefficients Function   
 
 
 
