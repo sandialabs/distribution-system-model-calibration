@@ -177,14 +177,8 @@ PIUtils.Plot_ModifiedSilhouetteCoefficients(allSC)
 
 # Create output list which includes any customers omitted from the analysis due to missing data 
 # Those customers will be at the end of the list and have a predicted phase and silhouette coefficient of -99 to indicate that they were not included in the analysis
-if len(noVotesIndex) !=0:
-        phaseLabelsOrg_FullList, phaseLabelsPred_FullList, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,phaseLabelsTrue,clusteredIDs,custIDInput,noVotesIDs,predictedPhases,allSC)
-else:
-    phaseLabelsOrg_FullList = phaseLabelsErrors
-    phaseLabelsPred_FullList = predictedPhases
-    phaseLabelsTrue_FullList = phaseLabelsTrue
-    custID_FullList = custIDInput
-    allSC_FullList = allSC    
+phaseLabelsOrg_FullList, phaseLabelsPred_FullList, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,clusteredIDs,custIDInput,noVotesIDs,predictedPhases,allSC,phaseLabelsTrue=phaseLabelsTrue)
+ 
 
 # Write outputs to csv file
 df = pd.DataFrame()

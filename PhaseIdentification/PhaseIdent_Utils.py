@@ -967,11 +967,13 @@ def Plot_ModifiedSilhouetteCoefficients(allSC,savePath=-1):
 
 
 
-def CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsOriginal,phaseLabelsTrue,clusteredIDs,custID,noVotesIDs,predictedPhases,allSC):
+def CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsOriginal,clusteredIDs,custID,noVotesIDs,predictedPhases,allSC,phaseLabelsTrue=-1):
     """ This function takes the results from the co-association matrix ensemble
             and adds back the customers which were omitted due to missing data.
             Those customers are given a predictedPhase and silhouette coefficient
-            of -99 to indicate that they were not processed.  
+            of -99 to indicate that they were not processed.  If noVotesID
+            is empty (i.e. no customers were omitted) then the function simply 
+            returns the fields as-is.
             
 
     Parameters
@@ -981,8 +983,6 @@ def CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsOriginal
             identification algorithm.  These phase labels may contain errors. 
         phaseLabelsOriginal: ndarray of int (1,customers) - the full list of
             original phase labels.  These phase labels may contain errors.
-        phaseLabelsTrue: ndarray of int (1,customers) - the full list of the
-            true phase labels for each customer
         clusteredIDs: list of str - the list of customer ids for which a predicted
             phase was produced
         custID: list of str - the complete list of customer ids
@@ -992,6 +992,9 @@ def CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsOriginal
             phase label for each customer
         allSC: list of float - the modified silhouette coefficients for each 
             customers included in the results
+        phaseLabelsTrue: ndarray of int (1,customers) - the full list of the
+            true phase labels for each customer.  This parameter is optional
+            if this is not available for your dataset.
 
     Returns
     -------
@@ -1004,7 +1007,8 @@ def CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsOriginal
             a predicted label of -99 to indicate they were not included
         phaseLabelsTrue_FullList: ndarray of int - the full list of true
             phase labels for each customer.  The customers omitted from the
-            results are moved to the end of the array
+            results are moved to the end of the array.  If phaseLabelsTrue was
+            not passed as a parameter, this returns -1
         custID_FullList: list of str - the list of customer ids with customers
             omitted due to missing data moved to the end of the list
         allSC_FullList: list of float - the list of silhouette coefficients.
@@ -1012,38 +1016,54 @@ def CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsOriginal
             a value of -99 to indicate they were not included in the results
                 
             """
+    if len(noVotesIDs) != 0: # Check if any customers were omitted
+        numCust = phaseLabelsOriginal.shape[1]
+        numClusteredCust = len(clusteredIDs)
         
-    numCust = phaseLabelsTrue.shape[1]
-    numClusteredCust = len(clusteredIDs)
+        phaseLabelsOrg_FullList = np.zeros((1,numCust),dtype=int)
+        phaseLabelsPred_FullList = np.zeros((1,numCust),dtype=int)
+        custID_FullList = list(deepcopy(clusteredIDs))
+        allSC_FullList = deepcopy(allSC)
+        if type(phaseLabelsTrue) != int:
+            phaseLabelsTrue_FullList = np.zeros((1,numCust),dtype=int)
+        else:
+            phaseLabelsTrue_FullList = -1
     
-    phaseLabelsOrg_FullList = np.zeros((1,numCust),dtype=int)
-    phaseLabelsPred_FullList = np.zeros((1,numCust),dtype=int)
-    phaseLabelsTrue_FullList = np.zeros((1,numCust),dtype=int)
-    custID_FullList = list(deepcopy(clusteredIDs))
-    allSC_FullList = deepcopy(allSC)
-
-    phaseLabelsPred_FullList[0,0:numClusteredCust] = predictedPhases
     
-    # Reshape customers included in the results
-    for custCtr in range(0,numClusteredCust):
-        currID = clusteredIDs[custCtr]
-        index = custID.index(currID)
-        phaseLabelsOrg_FullList[0,custCtr] = phaseLabelsOriginal[0,index]
-        phaseLabelsTrue_FullList[0,custCtr] = phaseLabelsTrue[0,index]
+        phaseLabelsPred_FullList[0,0:numClusteredCust] = predictedPhases
         
-    # Add the omitted customers
-    for custCtr in range(0,len(noVotesIDs)):
-        currID = noVotesIDs[custCtr]
-        index = custID.index(currID)
-        phaseLabelsOrg_FullList[0,(custCtr+numClusteredCust)] = phaseLabelsOriginal[0,index]
-        phaseLabelsTrue_FullList[0,(custCtr+numClusteredCust)] = phaseLabelsTrue[0,index]
+        # Reshape customers included in the results
+        for custCtr in range(0,numClusteredCust):
+            currID = clusteredIDs[custCtr]
+            index = custID.index(currID)
+            phaseLabelsOrg_FullList[0,custCtr] = phaseLabelsOriginal[0,index]
+            if type(phaseLabelsTrue) != int:
+                phaseLabelsTrue_FullList[0,custCtr] = phaseLabelsTrue[0,index]
+            
+        # Add the omitted customers
+        for custCtr in range(0,len(noVotesIDs)):
+            currID = noVotesIDs[custCtr]
+            index = custID.index(currID)
+            phaseLabelsOrg_FullList[0,(custCtr+numClusteredCust)] = phaseLabelsOriginal[0,index]
+            if type(phaseLabelsTrue) != int:
+                phaseLabelsTrue_FullList[0,(custCtr+numClusteredCust)] = phaseLabelsTrue[0,index]
+            
+            phaseLabelsPred_FullList[0,(custCtr+numClusteredCust)] = -99
+            custID_FullList.append(currID)
+            allSC_FullList.append(-99)
+            
+    else: # Copy the original fields and return them as-is
+        phaseLabelsOrg_FullList = deepcopy(phaseLabelsOriginal)
+        phaseLabelsPred_FullList = deepcopy(predictedPhases)
+        custID_FullList = deepcopy(clusteredIDs)
+        allSC_FullList = deepcopy(allSC)
+        if type(phaseLabelsTrue) != int:
+            phaseLabelsTrue_FullList = deepcopy(phaseLabelsTrue)
+        else:
+            phaseLabelsTrue_FullList = -1
         
-        phaseLabelsPred_FullList[0,(custCtr+numClusteredCust)] = -99
-        custID_FullList.append(currID)
-        allSC_FullList.append(-99)
 
     return phaseLabelsOrg_FullList, phaseLabelsPred_FullList, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList
-
 # End of CreateFullListCustomerResults_CAEns
 
 
