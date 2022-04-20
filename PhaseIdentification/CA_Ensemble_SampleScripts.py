@@ -172,7 +172,7 @@ print('There are ' + str(len(noVotesIndex)) + ' customers not predicted due to m
 
 
 # Calculate and Plot the confidence scores - Modified Silhouette Coefficients
-allSC = PIUtils.CalculatePlot_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClusterLabels,predictedPhases,kFinal)
+allSC = PIUtils.Calculate_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClusterLabels,predictedPhases,kFinal)
 PIUtils.Plot_ModifiedSilhouetteCoefficients(allSC)
 
 # Create output list which includes any customers omitted from the analysis due to missing data 

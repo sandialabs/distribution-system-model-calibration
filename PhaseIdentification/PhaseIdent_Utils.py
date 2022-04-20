@@ -844,7 +844,7 @@ def PlotHistogramOfCCSeparation(ccSeparation,xLim=0.2,savePath=-1):
 
 
 
-def CalculatePlot_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClusterLabels,predictedPhases,kFinal):
+def Calculate_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClusterLabels,predictedPhases,kFinal):
     """ This function takes the results from running the Ensemble Spectral Cluster
         Phase Identification algorithm, calculates a modified version of the
         Silhouette Score for each customer.
@@ -904,6 +904,8 @@ def CalculatePlot_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClus
                 allClusterPhases.append(clusterPhase)
             else:
                 indices = np.where(finalClusterLabels == clustCtr)[0]
+                if len(indices) == 0:
+                    continue
                 currB = np.mean(aggWMDist[custCtr,indices])
                 currBAff = np.mean(caMatrix[custCtr,indices])
                 allBs.append(currB)
