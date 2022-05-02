@@ -171,6 +171,7 @@ def AssignPhasesUsingSensors(voltageCust,voltageSens,custIDInput, sensIDInput,
     omittedCust = {}
     omittedCust['minWindows'] = []
     omittedCust['missDataOrFiltered'] = []
+    omittedCust['sensVoteCriteria'] = []
     
     # Calculate all correlation coefficients for all windows
     for ensCtr in range(0,ensTotal):
@@ -263,6 +264,7 @@ def AssignPhasesUsingSensors(voltageCust,voltageSens,custIDInput, sensIDInput,
                 noVotesIndex.append(custCtr)
                 noVotesIDs.append(custIDInput[custCtr])
                 allSensVotes.append([-999,])
+                omittedCust['sensVoteCriteria'].append(custIDInput[custCtr])                
             else:
                 allSensVotes.append(votes)
     # Calulate confidence score metrics        
