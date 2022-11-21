@@ -177,7 +177,7 @@ PIUtils.Plot_ModifiedSilhouetteCoefficients(allSC)
 
 # Create output list which includes any customers omitted from the analysis due to missing data 
 # Those customers will be at the end of the list and have a predicted phase and silhouette coefficient of -99 to indicate that they were not included in the analysis
-phaseLabelsOrg_FullList, phaseLabelsPred_FullList, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,clusteredIDs,custIDInput,noVotesIDs,predictedPhases,allSC,phaseLabelsTrue=phaseLabelsTrue)
+phaseLabelsOrg_FullList, phaseLabelsPred_FullList,allFinalClusterLabels, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,finalClusterLabels,clusteredIDs,custIDInput,noVotesIDs,predictedPhases,allSC,phaseLabelsTrue=phaseLabelsTrue)
  
 
 # Write outputs to csv file
@@ -187,6 +187,7 @@ df['Original Phase Labels (with errors)'] = phaseLabelsOrg_FullList[0,:]
 df['Predicted Phase Labels'] = phaseLabelsPred_FullList[0,:]
 df['Actual Phase Labels'] = phaseLabelsTrue_FullList[0,:]
 df['Confidence Score'] = allSC_FullList
+df['Final Cluster Label'] = allFinalClusterLabels
 df.to_csv('outputs_CAEnsMethod.csv')
 print('')
 print('Predicted phase labels written to outputs_CAEnsMethod.csv')
