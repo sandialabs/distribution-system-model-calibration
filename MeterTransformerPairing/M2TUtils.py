@@ -42,7 +42,8 @@ import datetime
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import mean_squared_error
 import pickle
-
+import haversine as hs
+from haversine import Unit
 
 
 ###############################################################################
@@ -152,6 +153,7 @@ def CC_EnsMedian(voltage,windowSize,custID):
                     were removed from all windows
             """    
         
+    print('Starting Correlation Coefficient calculation')
     ensTotal = int(np.floor(voltage.shape[0] / windowSize))
     ccMatrixAll = np.zeros((voltage.shape[1],voltage.shape[1],ensTotal),dtype=float)
     ccMatrix = np.zeros((voltage.shape[1],voltage.shape[1]),dtype=float)
@@ -373,9 +375,11 @@ def ParamEst_LinearRegression(voltage,pAvg,qAvg,saveFlag=True,savePath=-1):
     # Walk through each customer pairing and do the regression, note that the 
     #resulting matrices are mirrored across the diagonal
     for custCtr in range(0,voltage.shape[1]):
+        if np.mod(custCtr,20)==0:
+            print('Customer ' + str(custCtr) + '/' + str(voltage.shape[1]))
         ctr = custCtr + 1
         while ctr < voltage.shape[1]:
-            print(str(custCtr) + ' / ' + str(ctr))
+            #print(str(custCtr) + ' / ' + str(ctr))
             # Grab current customer pair
             v1 = voltage[:,custCtr]
             v2 = voltage[:,ctr]
@@ -456,6 +460,129 @@ def ParamEst_LinearRegression(voltage,pAvg,qAvg,saveFlag=True,savePath=-1):
         pickleData(mseMatrix,dataFilename,basePath=savePath)    
     return r2Affinity,regRDist,regXDist,regRDistIndiv,regXDistIndiv,mseMatrix
 # End of ParamEst_LinearRegression function
+
+
+
+###############################################################################
+#
+#                   ParamEst_LinearRegression_NoQ
+#
+def ParamEst_LinearRegression_NoQ(voltage,p,savePath=-1):
+    ''' Does a linear regression to find the x-values (reactance) and r-values
+        (resistance) based on the given voltage, real power, and reactive power
+        time series that are given.  Returns a matrix of estimated pairwise resistance
+        and reactance values for each customer as well as an r-squared value
+        denoting the pairwise 'fit' between customers.  Note that the dimensions of 
+        the voltage, real power, and reactive power must match.  This is based
+        on Matt Lave's work ("Full-scale Demonstration of Distribution System 
+        Parameter Estimation to Improve Low-Voltage Circuit Models") as well as
+        Kavya Ashok's work.  General formula: V1 - V2 = IR2(R2) + IX2(X2) - IR1(R1) - IX1(X1) + E
+        This version does not use reactive power
+
+        Parameters
+        ---------
+            voltage: ndarray of float:  (measurements,customers) numpy array 
+                of float containing the voltage time series measurements for 
+                each customer
+            p: ndarray of float:  (measurements,customers) numpy array of 
+                float containing the real power time series measurements for 
+                each customer
+            savePath: pathlib object or str - path to save the pickle
+                files.  If none specified the files are saved in the current 
+                directory
+
+        Returns
+        -------
+            r2Affinity: ndarray of float: (customers,customers)  
+                r-squared, pariwise affinity values from the regression 
+                (mirrored across the diagonal)    
+            regRDist: ndarray of float:  (customers,customers) - the pairwise
+                resistance 'distances' for each customer (mirrored across the
+                diagonal)
+            regRDistIndiv: ndarray of flaot:  (customers,customers) - 
+                resistance for the row customer when paired with the col customer
+            mseMatrix:  ndarray of float (customers,customers) -  mean-squared 
+                error between true and predicted values for each regression
+            
+        '''
+    
+    r2Affinity = np.ones((voltage.shape[1],voltage.shape[1]),dtype=float)
+    mseMatrix = np.zeros((voltage.shape[1],voltage.shape[1]),dtype=float)
+    regRDist = np.zeros((voltage.shape[1],voltage.shape[1]),dtype=float)
+    regRDistIndiv = np.zeros((voltage.shape[1],voltage.shape[1]),dtype=float)
+    # Walk through each customer pairing and do the regression, note that the 
+    #resulting matrices are mirrored across the diagonal
+    for custCtr in range(0,voltage.shape[1]):
+        if np.mod(custCtr,20) == 0:
+            print('Customer ' + str(custCtr) + '/' + str(voltage.shape[1]))
+        ctr = custCtr + 1
+        while ctr < voltage.shape[1]:
+            #print(str(custCtr) + ' / ' + str(ctr))
+            # Grab current customer pair
+            v1 = voltage[:,custCtr]
+            v2 = voltage[:,ctr]
+            p1 = p[:,custCtr]
+            p2 = p[:,ctr]
+            # Remove any nan values from the current pair of customers timeseries
+            mask = ~np.isnan(v1) & ~np.isnan(v2) & ~np.isnan(p1) & ~np.isnan(p2) 
+            v1 = v1[mask]
+            v2 = v2[mask]
+            p1 = p1[mask]
+            p2 = p2[mask]
+
+            #Calculate currents
+            ir1 = np.divide(p1,v1)
+            ir2 = np.divide(p2,v2)
+            
+            #Check for all timesteps being eliminated due to NaNs
+            if v1.shape[0] == 0:
+                r2Affinity[custCtr,ctr] = -1
+                r2Affinity[ctr,custCtr] = -1
+                mseMatrix[custCtr,ctr] = 1
+                mseMatrix[ctr,custCtr] = 1
+            else:
+                # Setup regression
+                y = v1-v2
+                x = np.zeros((y.shape[0],2),dtype=float)
+                x[:,0] = ir1 * -1
+                x[:,1] = ir2 
+                model = LinearRegression().fit(x,y)         
+                yPred = model.predict(x)
+                #Save r-squared scores
+                r2 = model.score(x,y)
+                r2Affinity[custCtr,ctr] = r2
+                r2Affinity[ctr,custCtr] = r2
+                mse = mean_squared_error(y,yPred)
+                mseMatrix[custCtr,ctr] = mse
+                mseMatrix[ctr,custCtr] = mse
+                # Save resistance coefficients - added together for an approximate distance between customers
+                rDist = model.coef_[0] + model.coef_[1]
+                regRDist[custCtr,ctr] = rDist
+                regRDist[ctr,custCtr] = rDist
+                regRDistIndiv[custCtr,ctr] = model.coef_[0]
+                regRDistIndiv[ctr,custCtr] = model.coef_[1]
+                #Save x (reactance) coefficients - added together for an approximate distance between customers
+ 
+            ctr = ctr + 1
+    # End of custCtr for loop
+    
+    # Save out pickle files of the r2 affinity matrix and the r1 + r2 distance matrix.
+    dataFilename = 'r2AffinityMatrix.pkl'
+    pickleData(r2Affinity,dataFilename,basePath=savePath)
+    dataFilename = 'regRDistMatrix.pkl'
+    pickleData(regRDist,dataFilename,basePath=savePath)
+    dataFilename = 'regRDistMatrixIndividual.pkl'
+    pickleData(regRDistIndiv,dataFilename,basePath=savePath)  
+    dataFilename = 'mseMatrix.pkl'
+    pickleData(mseMatrix,dataFilename,basePath=savePath)    
+        
+    return r2Affinity,regRDist,regRDistIndiv,mseMatrix
+# End of ParamEst_LinearRegression_NoQ function
+    
+##############################################################################
+
+
+
 
 
 ################################################################################
@@ -679,8 +806,78 @@ def PrettyPrintChangedCustomers(predictedTransLabels,transLabelsErrors,custIDInp
 
 
 
+##############################################################################
+#
+#       CreateDistanceMatrix
+#
+def CreateDistanceMatrix(latLonDict, labels,distTypeFlag='euclidean',units='m'):
+    """ This function takes a list of x,y coordinates indexed by customer
+            and creates a dictionary for lat/lon keyed to the transformer 
+            string name.  This function can either calculate euclidean 
+            distance or haversine distance.  Haversine distance should only
+            be used with true latitude and longitude coordinates.  Euclidean 
+            distance is the default.
+            
+            
+            Parameters
+            ---------
+                latLonDict: dictionary of tuples - lat lon tuples, keyed by a
+                    label.  The label could be anything
+                labels: The labels which are the keys for the dictionary.  The
+                    type of this is left open.  This could be a ndarray of int
+                    (1,customers) of transformer labels or a list of str.  
+                distTypeFlag: str - controls the type of distance calculation
+                    used.  The options are 'euclidean' or 'haversine', with 
+                    euclidean being the default.  The haversine distance should
+                    only be used with true latitude and longitude coordinates
+                units: str - the units for using the haversine distance. The
+                    default is m for meters.  ft would also be an acceptable 
+                    value
 
-
+            Returns
+            -------
+                distMatrix: ndarray of float - The distance between all pairs 
+                    of points in labels
+                    
+            """
+    # This forces labelsList into a common form regardless of the type of the labels input
+    labelsList = list(np.squeeze(labels))
+    
+    distMatrix = np.zeros((len(labelsList),len(labelsList)),dtype=float)
+    
+    if distTypeFlag == 'euclidean':
+            
+        for custCtr in range(0,len(labelsList)):
+            currLabel = labelsList[custCtr]
+            loc1 = latLonDict[labelsList[custCtr]]
+            ctr = custCtr + 1
+            while ctr < len(labelsList):
+                loc2 = latLonDict[labelsList[ctr]]
+                distance = ( (loc2[0] - loc1[0])**2 + (loc2[1] - loc1[1])**2 ) ** 0.5
+                
+                distMatrix[custCtr,ctr] = distance
+                distMatrix[ctr,custCtr] = distance
+                ctr = ctr + 1
+    elif distTypeFlag =='haversine':
+        for rowCtr in range(0,len(labelsList)):
+            currRowLabel = labelsList[rowCtr]
+            if currRowLabel not in latLonDict:
+                print('Label ' + str(currLabel) + ' is not present in the latLonDict.  This label was skipped and NaN placed in the distMatrix')
+                continue
+            colCtr = rowCtr + 1
+            while colCtr < len(labelsList):
+                currColLabel = labelsList[colCtr]
+                distance = np.round(hs.haversine(latLonDict[currRowLabel],latLonDict[currColLabel],unit=units),decimals=2)
+                distMatrix[rowCtr,colCtr] = distance
+                distMatrix[colCtr,rowCtr] = distance
+                colCtr = colCtr + 1
+    else:
+        print('Error!  The distTypeFlag must be set to \'euclidean\' or \'haversine\' ')
+        return(-1)
+        
+    return distMatrix
+    
+# End of CreateDistanceMatrix function        
 
 
 

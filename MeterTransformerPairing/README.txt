@@ -9,6 +9,9 @@ Required Standard Libraries (The version used during code development is listed 
 - pathlib (2.3.5)
 - scikit-learn (0.24.2)
 - matplotlib (3.3.4)
+- haversine (2.3.0)
+- scipy (1.6.2)
+- seaborn (0.11.1)
 - pickle
 - datetime
 - warnings

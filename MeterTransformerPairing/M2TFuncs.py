@@ -331,6 +331,166 @@ def CorrectFlaggedTransErrors(flaggedTrans,transLabelsInput,custIDInput,
 
 
 
+###############################################################################
+#
+#                       CorrectFlaggedTransformers_WithDist
+#
+
+def CorrectFlaggedTransformers_WithDist(mseMatrixInput, ccMatrix,
+                                                    ccThresh,
+                                                    flaggedTransInput,custIDInput, 
+                                                    transLabelsOriginal,
+                                                    distMatrix=-1,
+                                                    useDistFlag=False,
+                                                    distThreshold=-1,
+                                                    transStrInput=-1,
+                                                    saveFlag=True,
+                                                    savePath=-1):
+    """ This function takes a list of flagged transformers and a pairwise mse
+            matrix.  Customers on flagged transformers are paired with the
+            customer/transformer dictated by the minimum pairwise MSE value 
+            for each customer.  The distance between the original transformer
+            and the new transformer is calculated using the haversine 
+            distance.  A list of the new predicted transformer labels is returned.
+            
+            Parameters
+            ---------
+                mseMatrixInput: numpy array of float (customers,customers) - the
+                    mse values from a pairwise regression for each customer
+                ccMatrix: ndarray of float (customers,customers) - the
+                    pairwise correlation coefficient matrix for each customer
+                ccThresh:  float - the threshold for the correlation coefficients
+                    pairs with CC less than this threshold will not be considered
+                    on the same  transformer
+                flaggedTransInput: list of int - the list of flagged 
+                    transformers
+                custIDInput: list of str - the list of customer IDs
+                transLabelsOriginal: numpy array of int (1,customers) - the 
+                    original numeric transformer labels for each customer.  
+                    These labels likely contain labeling errors 
+                distMatrix: ndarray of float (customers,customers) - the 
+                    pairwise distances between each customer.  The units of 
+                    this must match the units of distThresh
+                useDistFlag: boolean - a flag to include the distance threshold
+                    or not.  Its difficult to incorporate the distance 
+                    information with the synthetic data.  The default is 
+                    False
+                distThresh: float - a distance threshold.  Transformer which 
+                    are too far away will not be considered a possible pair.
+                    Make sure the units of this match the units produced by
+                    the transLatLon dictionary.  For example, the EPB data
+                    produces meters and the synthetic data produces feet.
+                    This parameter is required if useDistFlag is True
+                transStrInput: list of str - the list of transformer IDs in 
+                    string form. This parameter is optional.
+                saveFlag: boolean - flag to save the pretty print results to
+                    a text file.  The default value is True
+                savePath: pathlib obj or str - the path to save the results
+                    file.  If not specified the file will save to the current
+                    directory
+                
+                    
+
+            Returns
+            -------
+                predictedTransLabels: ndarray of int (1,customers) - the 
+                    predicted transformer labels for each customer.  This 
+                    version uses the existing phase labels
+                predictedTransStrLabels: list of str - the list of predicted 
+                    transformer labels in str form
+            """      
+    
+    minMSEList = []
+    minCustIndices = []
+    minCustID = []
+    minMSECCList = []
+    orgFlagIDs = []
+    orgCustIndices = []
+    orgTrans= []
+    orgStrTrans = []
+    minTrans = []
+    minStrTrans= []
+    dist2NewTrans = []
+    maxMSE = np.max(mseMatrixInput)
+    currNewLabel = -1
+    predictedTransLabels = deepcopy(transLabelsOriginal)
+    if type(transStrInput) != int:
+        predictedTransStrLabels = np.array(deepcopy(transStrInput))
+    else:
+        predictedTransStrLabels = -1
+
+    # Loop through flagged transformers/customers and assign a new label        
+    for flagCtr in range(0,len(flaggedTransInput)):
+        currentIndices = np.where(transLabelsOriginal == flaggedTransInput[flagCtr])[1]
+        currTrans = flaggedTransInput[flagCtr]
+        
+        for custCtr in range(0,len(currentIndices)):
+            currentIndex = currentIndices[custCtr]
+            orgCustIndices.append(currentIndex)
+            orgFlagIDs.append(custIDInput[currentIndex])
+            orgTrans.append(transLabelsOriginal[0,currentIndex])
+            
+            # Find customer with the minimum mse
+            currMSE = deepcopy(mseMatrixInput[currentIndex,:])
+            currMSE[currentIndex] = maxMSE
+            minIndex=np.argmin(currMSE)
+            minMSEList.append(np.min(currMSE))
+            minCustIndices.append(np.argmin(currMSE))
+            minCustID.append(custIDInput[minIndex])
+            #currMinTrans = transLabelsOriginal[0,minIndex]
+            currMinTrans = predictedTransLabels[0,minIndex]
+            minTrans.append(currMinTrans)
+            
+            # Find the CC for the min mse customer
+            minMSECC = np.round(ccMatrix[currentIndex,minIndex],decimals=3)
+            minMSECCList.append(minMSECC)
+            if type(transStrInput) != int:
+                minStrTrans.append(transStrInput[minIndex])
+                orgStrTrans.append(transStrInput[currentIndex])
+                
+            # Find the distance between the current transformer and the min mse transformer
+            if useDistFlag:
+                #if type(transStrInput) != int:
+                #    transLoc1 = transLatLon[transStrInput[currentIndex]]
+                #    transLoc2 = transLatLon[transStrInput[minIndex]]
+                #else:
+                #    transLoc1 = transLatLon[transLabelsOriginal[currentIndex]]
+                #    transLoc2 = transLatLon[transLabelsOriginal[minIndex]]                
+                #distance = np.round(hs.haversine(transLoc1,transLoc2,unit=Unit.METERS),decimals=2)
+                distance = distMatrix[currentIndex,minIndex]
+                dist2NewTrans.append(distance)                
+                
+            sctFlag = False
+            if minMSECC < ccThresh: # check if the new transformer violates the CC Threshold
+                #print('The minMSE customer would violate the CC threshold -> this customer was give a new label (single customer transformer) ' + str(currentIndex) )
+                sctFlag = True
+            elif useDistFlag and (distance > distThreshold): # check if the new transformer violates the distance threshold
+                sctFlag = True    
+                
+            if sctFlag:
+                # Check if the current customer is the only remaining customer on the transformer (i.e. all other customers were already re-assigned)
+                    # In this case this customer retains the original transformer label   
+                currTransIndices = np.where(predictedTransLabels==currTrans)[1]
+                if len(currTransIndices) > 1:
+                    predictedTransLabels[0,currentIndex] = currNewLabel
+                    if type(transStrInput) != int:
+                        predictedTransStrLabels[currentIndex] = currNewLabel
+                    currNewLabel = currNewLabel - 1                
+                
+            else: # Otherwise assign the new transformer label based on the label of the customer with the minimum MSE
+                #predictedTransLabels[0,currentIndex] = transLabelsOriginal[0,minIndex]
+                predictedTransLabels[0,currentIndex] = predictedTransLabels[0,minIndex]
+                if type(transStrInput) != int:
+                    predictedTransStrLabels[currentIndex] = predictedTransStrLabels[minIndex]
+        # End of custCtr for loop
+    # End of flagCtr for loop
+ 
+
+    return predictedTransLabels, predictedTransStrLabels
+# End of CorrectFlaggedTransformers_WithDist    
+    
+
+
 
 
 

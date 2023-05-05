@@ -102,7 +102,9 @@ phaseLabelsErrors = np.load(filename)
 filename = Path(filePath,'CustomerIDs_AMI.npy')
 custIDInput = list(np.load(filename))
 
-
+# This script has the ability to compare the predicted labels to the true labels.  
+#   If true labels are available set this flag True (as in the provided sample data) otherwise set to False
+useTrueLabelsFlag = True
 
 ##############################################################################
 ###############################################################################
@@ -141,12 +143,16 @@ finalClusterLabels,noVotesIndex,noVotesIDs,clusteredIDs,caMatrix,custWindowCount
 # Remove any omitted customers from the list of phase labels
 if len(noVotesIndex) != 0:
     clusteredPhaseLabels = np.delete(phaseLabelsErrors,noVotesIndex,axis=1)
-    clusteredTruePhaseLabels = np.delete(phaseLabelsTrue,noVotesIndex,axis=1)
     custIDFound = list(np.delete(np.array(custIDInput),noVotesIndex))
+    if useTrueLabelsFlag:
+        clusteredTruePhaseLabels = np.delete(phaseLabelsTrue,noVotesIndex,axis=1)
+
 else:
     clusteredPhaseLabels = phaseLabelsErrors
-    clusteredTruePhaseLabels = phaseLabelsTrue
     custIDFound = custIDInput
+    if useTrueLabelsFlag:
+        clusteredTruePhaseLabels = phaseLabelsTrue
+
 
     
 # Use the phase labels to assign final phase predictions based on the majority vote in the final clusters
@@ -157,18 +163,19 @@ predictedPhases = PIUtils.CalcPredictedPhaseNoLabels(finalClusterLabels, cluster
 # This shows how many of the predicted phase labels are different from the original phase labels
 diffIndices = np.where(predictedPhases!=clusteredPhaseLabels)[1]
 
-# If the ground-truth labels are available, this will calculate a true accuracy
-accuracy, incorrectCustCount = PIUtils.CalcAccuracyPredwGroundTruth(predictedPhases, clusteredTruePhaseLabels,clusteredIDs)
-accuracy = accuracy*100
-
-
+print('')
 print('Spectral Clustering Ensemble Phase Identification Results')
 print('There are ' + str(diffIndices.shape[0]) + ' customers with different phase labels compared to the original phase labeling.')
+print('There are ' + str(len(noVotesIndex)) + ' customers not predicted due to missing data')
 print('')
 
-print('The accuracy of the predicted phase is ' + str(accuracy) + '% after comparing to the ground truth phase labels')
-print('There are '+ str(incorrectCustCount) + ' incorrectly predicted customers')
-print('There are ' + str(len(noVotesIndex)) + ' customers not predicted due to missing data')
+# If the ground-truth labels are available, this will calculate a true accuracy
+if useTrueLabelsFlag:
+    accuracy, incorrectCustCount = PIUtils.CalcAccuracyPredwGroundTruth(predictedPhases, clusteredTruePhaseLabels,clusteredIDs)
+    accuracy = accuracy*100
+
+    print('The accuracy of the predicted phase is ' + str(accuracy) + '% after comparing to the ground truth phase labels')
+    print('There are '+ str(incorrectCustCount) + ' incorrectly predicted customers')
 
 
 # Calculate and Plot the confidence scores - Modified Silhouette Coefficients
@@ -177,15 +184,19 @@ PIUtils.Plot_ModifiedSilhouetteCoefficients(allSC)
 
 # Create output list which includes any customers omitted from the analysis due to missing data 
 # Those customers will be at the end of the list and have a predicted phase and silhouette coefficient of -99 to indicate that they were not included in the analysis
-phaseLabelsOrg_FullList, phaseLabelsPred_FullList,allFinalClusterLabels, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,finalClusterLabels,clusteredIDs,custIDInput,noVotesIDs,predictedPhases,allSC,phaseLabelsTrue=phaseLabelsTrue)
- 
+if useTrueLabelsFlag:
+    phaseLabelsOrg_FullList, phaseLabelsPred_FullList,allFinalClusterLabels, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,finalClusterLabels,clusteredIDs,custIDInput,noVotesIDs,predictedPhases,allSC,phaseLabelsTrue=phaseLabelsTrue)
+else:
+    phaseLabelsOrg_FullList, phaseLabelsPred_FullList,allFinalClusterLabels, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,finalClusterLabels,clusteredIDs,custIDInput,noVotesIDs,predictedPhases,allSC)
+
 
 # Write outputs to csv file
 df = pd.DataFrame()
 df['customer ID'] = custID_FullList
 df['Original Phase Labels (with errors)'] = phaseLabelsOrg_FullList[0,:]
 df['Predicted Phase Labels'] = phaseLabelsPred_FullList[0,:]
-df['Actual Phase Labels'] = phaseLabelsTrue_FullList[0,:]
+if useTrueLabelsFlag:
+    df['Actual Phase Labels'] = phaseLabelsTrue_FullList[0,:]
 df['Confidence Score'] = allSC_FullList
 df['Final Cluster Label'] = allFinalClusterLabels
 df.to_csv('outputs_CAEnsMethod.csv')
