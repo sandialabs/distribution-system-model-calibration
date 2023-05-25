@@ -88,6 +88,22 @@ import PhaseIdent_Utils as PIUtils
 
 
 ##############################################################################
+#
+#       Flags
+
+# Use the numPhases field if available
+#   Each datastream ID must be unique, even if there are multiple datastreams 
+#      from the same customer, as in the 3-phase case
+#   If the number of phases is known for each customer that will be used to 
+#      assign unique datastream names (if necessary) and 2-phase and 3-phase
+#      datastreams from the same customer will not be allowed to cluster together
+useNumPhasesField = True
+
+# This script has the ability to compare the predicted labels to the true labels.  
+#   If true labels are available set this flag True (as in the provided sample data) otherwise set to False
+useTrueLabelsFlag = True
+
+##############################################################################
 #                    Load Sample Data
 
 currentDirectory = Path.cwd()
@@ -95,16 +111,21 @@ filePath = Path(currentDirectory.parent,'SampleData')
 
 filename = Path(filePath,'VoltageData_AMI.npy')
 voltageInputCust = np.load(filename)
-filename = Path(filePath,'PhaseLabelsTrue_AMI.npy')
-phaseLabelsTrue = np.load(filename)
+
 filename = Path(filePath,'PhaseLabelsErrors_AMI.npy')
 phaseLabelsErrors = np.load(filename)
 filename = Path(filePath,'CustomerIDs_AMI.npy')
 custIDInput = list(np.load(filename))
 
-# This script has the ability to compare the predicted labels to the true labels.  
-#   If true labels are available set this flag True (as in the provided sample data) otherwise set to False
-useTrueLabelsFlag = True
+if useTrueLabelsFlag:
+    filename = Path(filePath,'PhaseLabelsTrue_AMI.npy')
+    phaseLabelsTrue = np.load(filename)
+
+if useNumPhasesField:
+    filename = Path(filePath,'NumPhases.npy')
+    numPhasesInput = (np.array((np.load(filename)),dtype=int))
+
+
 
 ##############################################################################
 ###############################################################################
@@ -121,6 +142,11 @@ vNorm = PIUtils.ConvertToPerUnit_Voltage(voltageInputCust)
 # This takes the difference between adjacent measurements, converting the timeseries into a per-unit, change in voltage timeseries
 vNDV = PIUtils.CalcDeltaVoltage(vNorm)
 
+# Check that all datastreams have unique IDs
+if useNumPhasesField:
+    custIDUnique, numPhases = PIUtils.Ensure3PhaseCustHaveUniqueID(custIDInput,phaseLabelsErrors,numPhasesInput=numPhasesInput)
+else:
+    custIDUnique, numPhases = PIUtils.Ensure3PhaseCustHaveUniqueID(custIDInput,phaseLabelsErrors)
 
 # kFinal is the number of final clusters produced by the algorithm.  Each 
 #   cluster will represent a phase grouping of customers.  Ideally, this value
@@ -138,18 +164,18 @@ kVector =[6,12,15,30]
 windowSize = 384
 
 # This is the primary phase identification function - See documentation in CA_Ensemble_Funcs.py for details on the inputs/outputs
-finalClusterLabels,noVotesIndex,noVotesIDs,clusteredIDs,caMatrix,custWindowCounts = CAE.CAEnsemble(vNDV,kVector,kFinal,custIDInput,windowSize)
+finalClusterLabels,noVotesIndex,noVotesIDs,clusteredIDs,caMatrix,custWindowCounts = CAE.CAEnsemble(vNDV,kVector,kFinal,custIDUnique,windowSize,numPhases=numPhases)
 
 # Remove any omitted customers from the list of phase labels
 if len(noVotesIndex) != 0:
     clusteredPhaseLabels = np.delete(phaseLabelsErrors,noVotesIndex,axis=1)
-    custIDFound = list(np.delete(np.array(custIDInput),noVotesIndex))
+    custIDFound = list(np.delete(np.array(custIDUnique),noVotesIndex))
     if useTrueLabelsFlag:
         clusteredTruePhaseLabels = np.delete(phaseLabelsTrue,noVotesIndex,axis=1)
 
 else:
     clusteredPhaseLabels = phaseLabelsErrors
-    custIDFound = custIDInput
+    custIDFound = custIDUnique
     if useTrueLabelsFlag:
         clusteredTruePhaseLabels = phaseLabelsTrue
 
@@ -185,9 +211,9 @@ PIUtils.Plot_ModifiedSilhouetteCoefficients(allSC)
 # Create output list which includes any customers omitted from the analysis due to missing data 
 # Those customers will be at the end of the list and have a predicted phase and silhouette coefficient of -99 to indicate that they were not included in the analysis
 if useTrueLabelsFlag:
-    phaseLabelsOrg_FullList, phaseLabelsPred_FullList,allFinalClusterLabels, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,finalClusterLabels,clusteredIDs,custIDInput,noVotesIDs,predictedPhases,allSC,phaseLabelsTrue=phaseLabelsTrue)
+    phaseLabelsOrg_FullList, phaseLabelsPred_FullList,allFinalClusterLabels, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,finalClusterLabels,clusteredIDs,custIDUnique,noVotesIDs,predictedPhases,allSC,phaseLabelsTrue=phaseLabelsTrue)
 else:
-    phaseLabelsOrg_FullList, phaseLabelsPred_FullList,allFinalClusterLabels, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,finalClusterLabels,clusteredIDs,custIDInput,noVotesIDs,predictedPhases,allSC)
+    phaseLabelsOrg_FullList, phaseLabelsPred_FullList,allFinalClusterLabels, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,finalClusterLabels,clusteredIDs,custIDUnique,noVotesIDs,predictedPhases,allSC)
 
 
 # Write outputs to csv file

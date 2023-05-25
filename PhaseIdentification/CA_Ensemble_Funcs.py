@@ -134,7 +134,7 @@ def SPClustering_Precomp(aggWM,kFinal):
 #                       CAEnsemble
 #
 
-def CAEnsemble(voltage,kVector,kFinal,custID,windowSize,lowWindowsThresh=4,printLowWinWarningFlag=True):
+def CAEnsemble(voltage,kVector,kFinal,custID,windowSize,numPhases=-1,lowWindowsThresh=4,printLowWinWarningFlag=True):
 
     """ This function implements the ensemble of Spectral Clustering  for the
         task of phase identification task.  The ensemble size is determined by 
@@ -161,6 +161,12 @@ def CAEnsemble(voltage,kVector,kFinal,custID,windowSize,lowWindowsThresh=4,print
                 custID: list of str - list of customer ids
                 windowSize:  int - The size (in number of measurements) of the 
                     sliding window
+                numPhases: ndarray of int (1,customers) - the indicator for 
+                    each customer if it is a single-phase, 2-phase, or 3-phase
+                    customer.  This parameter should be supplied be the user
+                    or will be estimated using the customer IDs and existing 
+                    phase labels.  It is only marked as optional here for 
+                    backwards compatibility purposes.                    
                 lowWindowsThresh: int - the minimum number of windows before
                     printing a warning that some customers had few windows 
                     due to missing data.  The default value is set to 4 if 
@@ -245,6 +251,27 @@ def CAEnsemble(voltage,kVector,kFinal,custID,windowSize,lowWindowsThresh=4,print
                 allClusterCounts.append(clusterCounts[kCtr2])
         #End of kCtr for loop
     # End of ensCtr for loop
+
+    
+    # Zero entries for 2-phase and 3-phase customers with themselves so they cannot be clustered together
+    # Note that 2-phase and 3-phase datastreams must be adjacent in the indexing!
+    custCtr = 0
+    while custCtr < len(custID):
+        if numPhases[0,custCtr] == 2:
+            aggWM[custCtr,(custCtr+1)] = 0
+            aggWM[(custCtr+1),custCtr] = 0
+            custCtr = custCtr + 2
+        elif numPhases[0,custCtr] == 3:
+            aggWM[custCtr,(custCtr+1)] = 0
+            aggWM[custCtr,(custCtr+2)] = 0
+            aggWM[(custCtr+1),custCtr] = 0
+            aggWM[(custCtr+1),(custCtr+2)] = 0
+            aggWM[(custCtr+2),custCtr] = 0
+            aggWM[(custCtr+2),(custCtr+1)] = 0
+            custCtr = custCtr + 3
+        else:
+            custCtr = custCtr + 1
+    
     
     #Split customers into customers who had at least one window of data and those that did not
     # If a customer had missing data in all windows then they are not included in the algorithm results

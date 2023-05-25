@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.1.2] 
+- Enabled better processing of 2/3-phase customers
+
 ## [1.1.1] 
 - Added the Meter to Transformer Pairing algorithm which leverages P/V/Labels/Distance
 

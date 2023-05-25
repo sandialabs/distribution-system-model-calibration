@@ -44,7 +44,7 @@ import seaborn as sns
 from pathlib import Path
 import datetime
 from scipy import stats
-
+import pandas as pd
 
 ###############################################################################
 #
@@ -1185,4 +1185,187 @@ def CreateFullListCustomerResults_SensMeth(clusteredPhaseLabels,phaseLabelsOrigi
 
 
 
-   
+
+
+
+def Ensure3PhaseCustHaveUniqueID(custIDOriginal,phaseLabelsInput,numPhasesInput = -1,savePath=-1):
+    """ This function takes as input the original list of customer IDs.  This
+            list may contain repeated entries for 2-phase or 3-phase customers.
+            Meaning, that there is one entry per datastream and a 3-phase 
+            may have three datastreams.  The phase identification algorithm
+            requires a unique ID for each datastream.  This will append a 
+            1,2,3 based on the customer phase label to those customers.
+            Customer IDs with multiple datastreams and different original phase
+            labels are considered to be 2-phase or 3-phase customers and will
+            not be allowed to cluster together. 
+            Alternatively, customer IDs with multiple datastreams with matching
+            phase labels will be assigned unique IDs but will still be allowed
+            to cluster together.  These are considered to be the case where
+            one premise has multiple meters (for example a house and a barn).
+            
+            Note!  2-phase and 3-phase datastreams must be adjacent to each 
+            other!  Meaning for a three phase customer the three datastreams
+            must be contiguous in index, i.e. indices 2,3,4
+            
+            This function will also print the customers which have been assigned
+            new IDs and save a csv with the alterations.
+
+    Parameters
+    ---------
+        custIDOriginal: list of str - the list of original customer IDs
+        phaseLabelsInput: ndarray of float (1,customers) - the original phase
+            labels for each customer
+        numPhasesInput: ndarray of int (1,customers)  - the number of phases 
+            for each customer.  The indexing should match custIDOriginal.
+            1 - single-phase,2 - 2-phase, 3 - 3-phase.  This parameter is 
+            optional; if it is not specified the numPhases field will be 
+            estimated based on the original phase labels
+            
+        savePath: str or pathlib object - the path to save the histogram 
+            figure.  If none is specified the figure is saved in the current
+            directory                   
+    Returns
+    -------
+        custIDUnique: list of str - the list of updated customer IDs such that
+            there are no repeated IDs
+        numPhasesNew: ndarray of int (1,customers) - 1,2,3 for if each 
+            datastream/customer is 1,2,or 3-phase customer
+            
+            """
+    
+    print('Check if all datastreams have a unique ID')
+    
+    
+    uniqueList = np.unique(custIDOriginal)
+    # If there are no duplicates and numPhases is not supplied, then no action 
+    #    is necessary and all customers are treated as single-phase
+    if (len(uniqueList) == len(custIDOriginal)) and (type(numPhasesInput) == int):
+        print('No duplicate customer IDs found')
+        numPhasesNew = np.ones((1,len(custIDOriginal)),dtype=int)
+        return custIDOriginal, numPhasesNew
+    # If there are no duplicates and numPhases IS supplied, then no action is required
+    elif (len(uniqueList) == len(custIDOriginal)) and (type(numPhasesInput) != int):
+        print('No duplicate customer IDs found')
+        numPhasesNew = numPhasesInput
+        return custIDOriginal, numPhasesNew
+    
+    else:
+                
+        custIDUnique = []
+        changedIndices = []
+        numPhasesNew = np.zeros((1,len(custIDOriginal)),dtype=int)
+        appendCtr = 0 # This is used to ensure that labels will definitely be unique
+        
+        # Loop through each original ID
+        for custCtr in range(0,len(custIDOriginal)):
+            currCust = custIDOriginal[custCtr]  
+            indices = np.where(np.array(custIDOriginal)==currCust)[0]
+            # Standard case, single phase, already has a unique id
+            if len(indices) == 1:  
+                numPhasesNew[0,custCtr] = 1
+                custIDUnique.append(currCust)
+            elif len(indices) == 2: 
+                # Only change the name if numPhases was supplied by the user
+                if type(numPhasesInput) != int:
+                    newStr = currCust + '_' + str(phaseLabelsInput[0,custCtr]) + '_' + str(appendCtr)
+                    appendCtr = appendCtr + 1
+                    custIDUnique.append(newStr)
+                    changedIndices.append(custCtr)                    
+                # Otherwise create/estimate numPhases from the original phase labels
+                else:
+                    # This is the barn case -> two meters, same premise, probably the same phase
+                    if phaseLabelsInput[0,indices[0]] == phaseLabelsInput[0,indices[1]]:
+                        numPhasesNew[0,custCtr] = 1
+                        newStr = currCust + '_' + str(phaseLabelsInput[0,custCtr]) + '_' + str(appendCtr)
+                        appendCtr = appendCtr + 1
+                        custIDUnique.append(newStr)
+                        changedIndices.append(custCtr)
+                    # This is the 2-phase case -> one meter, two datastreams, probably different phases
+                    else:
+                        numPhasesNew[0,custCtr] = 2
+                        newStr = currCust + '_' + str(phaseLabelsInput[0,custCtr])
+                        custIDUnique.append(newStr)
+                        changedIndices.append(custCtr)
+            elif len(indices) == 3:
+                # Only change the name if numPhases was supplied by the user
+                if type(numPhasesInput) != int:                
+                    newStr = currCust + '_' + str(phaseLabelsInput[0,custCtr]) + '_' + str(appendCtr)
+                    appendCtr = appendCtr + 1
+                    custIDUnique.append(newStr)
+                    changedIndices.append(custCtr)
+                
+                # Otherwise create/estimate numPhases from the original phase labels                
+                else:  
+                    # Allow for a possible barn case, although this seems less likely
+                    if phaseLabelsInput[0,indices[0]] == phaseLabelsInput[0,indices[1]] == phaseLabelsInput[0,indices[2]]:
+                        numPhasesNew[0,custCtr] = 1
+                        newStr = currCust + '_' + str(phaseLabelsInput[0,custCtr]) + '_' + str(appendCtr)
+                        appendCtr = appendCtr + 1
+                        custIDUnique.append(newStr)
+                        changedIndices.append(custCtr)
+                    # Three-phase case
+                    else:
+                        numPhasesNew[0,custCtr] = 3
+                        newStr = currCust + '_' + str(phaseLabelsInput[0,custCtr])
+                        custIDUnique.append(newStr)
+                        changedIndices.append(custCtr)                
+            else: # This would be an odd situation.  In this case, just assign a unique id and leave it alone
+                if type(numPhasesInput) != int:    
+                    numPhasesNew[0,custCtr] = 1
+                newStr = currCust + '_' + str(phaseLabelsInput[0,custCtr]) + '_' + str(appendCtr)
+                appendCtr = appendCtr + 1
+                custIDUnique.append(newStr)
+                changedIndices.append(custCtr)
+        # End of custCtr for loop
+    # End of else statement
+
+    # If numPhases was supplied by the user, this function will just return that as numPhasesNew
+    if type(numPhasesInput) != int:
+        numPhasesNew = numPhasesInput
+
+    # Print changed customers
+    if len(changedIndices) > 0:
+        print('#########')
+        print('')
+        print(str(len(changedIndices)) + ' customer IDs were changed to give them unique IDs')
+        if type(numPhasesInput) == int:
+            print('Repeated customer IDs with differing original phase labels are considered to be 2-phase or 3-phase customers, and those datastreams will not be allowed to cluster together in the phase identification algorithm.  Repeated customer IDs with multiple datastreams with matching original phase labels are considered to be single-phase, possibly multiple meters at a single premise.')
+            print('Please review the following printout of altered customer IDs or the saved csv file to ensure that this is the desired behavior for your customers.')
+            print('Further details are available in the pdf documentation file included in the repository')
+        else:
+            print('Repeated IDs were altered to be unique, but numPhases was supplied by the user')
+        print('')
+        for changeCtr in range(0,len(changedIndices)):
+            print('Original ID:  ' + str(custIDOriginal[changedIndices[changeCtr]]))
+            print('Unique ID:  ' + str(custIDUnique[changedIndices[changeCtr]]))
+            print('Original Phase:  ' + str(phaseLabelsInput[0,changedIndices[changeCtr]]))
+            print('Number of Phases Label:  ' + str(numPhasesNew[0,changedIndices[changeCtr]]))
+            print('')                                             
+
+        # pretty print changed customer IDs
+        changedIDs = []
+        newIDs = []
+        changedPhases = []
+        changedNumPhases = []
+        for changeCtr in range(0,len(changedIndices)):
+            changedIDs.append(custIDOriginal[changedIndices[changeCtr]])
+            newIDs.append(custIDUnique[changedIndices[changeCtr]])
+            changedPhases.append(phaseLabelsInput[0,changedIndices[changeCtr]])
+            changedNumPhases.append(numPhasesNew[0,changedIndices[changeCtr]])
+    
+        # Save changed customers to csv file
+        df = pd.DataFrame()
+        df['Original Customer ID'] = changedIDs
+        df['Unique Customer ID'] = newIDs
+        df['Original Phase Label'] = changedPhases
+        df['Given Number of Phases'] = changedNumPhases
+        if type(savePath) == int:
+            df.to_csv('ChangedCustomerIDs.csv')
+        else:df.to_csv(Path(savePath,'ChangedCustomerIDs.csv'))
+        print('Customers given new, unique IDs written to ChangedCustomerIDs.csv')
+        print('')
+        print('#########')
+    return custIDUnique, numPhasesNew    
+# End of Ensure3PhaseCustHaveUniqueID Function   
+
+      
