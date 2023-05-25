@@ -61,6 +61,7 @@ Publications related to this method:
 B. D. Peña, L. Blakely, and M. J. Reno, “Online Data-Driven Detection of Phase Changes in Evolving Distribution Systems,” presented at the ISGT, 2023.
 B. D. Peña, L. Blakely, M. J. Reno, “Data-Driven Detection of Phase Changes in Evolving Distribution Systems,” presented at TPEC, 2022.
 
+This code primary developed by Bethany D. Peña and Logan Blakely
     
 """
 
