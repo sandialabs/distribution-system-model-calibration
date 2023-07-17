@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.1.3]
+- Fixed a bug related to processing of 2/3-phase customers
+
 ## [1.1.2] 
 - Enabled better processing of 2/3-phase customers
 

@@ -35,7 +35,7 @@ This file contains misc helper functions for the phase identification task
 
 
 
-
+import sys
 import numpy as np
 import warnings
 from copy import deepcopy
@@ -1322,6 +1322,16 @@ def Ensure3PhaseCustHaveUniqueID(custIDOriginal,phaseLabelsInput,numPhasesInput 
     # If numPhases was supplied by the user, this function will just return that as numPhasesNew
     if type(numPhasesInput) != int:
         numPhasesNew = numPhasesInput
+        
+    indices1 = len(np.where(numPhasesInput[0,:] == 1)[0])
+    indices2 = len(np.where(numPhasesInput[0,:] == 2)[0])
+    indices3 = len(np.where(numPhasesInput[0,:] == 3)[0])
+    
+    twoMod = np.mod(indices2,2)
+    threeMod = np.mod(indices3,3)
+    if (twoMod != 0) or (threeMod != 0):
+        print('Error!  The number of datastreams provided does not match the number of phases specified in the numPhases field.  You must fix this before proceeding.  See the pdf documentation for more details.')
+        sys.exit()
 
     # Print changed customers
     if len(changedIndices) > 0:
