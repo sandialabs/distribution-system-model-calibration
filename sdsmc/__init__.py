@@ -1,5 +1,5 @@
 if __package__ in [None, '']:
-    from MeterTransformerPairing import M2TFuncs
+    import MeterTransformerPairing
 else:
     from sdsmc import MeterTransformerPairing
 
