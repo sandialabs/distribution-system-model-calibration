@@ -1,6 +1,6 @@
-from . import MeterTransformerPairing
-from . import OnlinePhaseChangePoint
-from . import PhaseIdentification
+from sdsmc import MeterTransformerPairing
+from sdsmc import OnlinePhaseChangePoint
+from sdsmc import PhaseIdentification
 
 #TODO: import the specific functions from the submodules that you want to expose to the user
 
