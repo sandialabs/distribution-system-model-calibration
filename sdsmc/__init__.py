@@ -1,8 +1,8 @@
-from MeterTransformerPairing import *
-from OnlinePhaseChangePoint import *
-from PhaseIdentification import *
+from . import MeterTransformerPairing
+from . import OnlinePhaseChangePoint
+from . import PhaseIdentification
 
-#TODO: don't star import the submodules, just import the functions needed to run the code.
+#TODO: import the specific functions from the submodules that you want to expose to the user
 
 def meter_transformer_pairing(in_csv,out_csv):
     pass #TODO: implement by calling the correct module function
