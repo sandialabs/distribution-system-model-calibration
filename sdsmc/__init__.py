@@ -3,8 +3,8 @@ if __package__ in [None, '']:
 else:
     from . import MeterTransformerPairing
 
-# from sdsmc import OnlinePhaseChangePoint
-# from sdsmc import PhaseIdentification
+# from . import OnlinePhaseChangePoint
+# from . import PhaseIdentification
 #TODO: set up imports froms other sub-packages
 #TODO: import the specific functions from the submodules that you want to expose to the user
 
