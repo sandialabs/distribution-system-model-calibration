@@ -1,11 +1,11 @@
 if __package__ is None or __package__ == '':
     import MeterTransformerPairing
 else:
-    from . import MeterTransformerPairing
+    from sdsmc import MeterTransformerPairing
 
-# from sdsmc import MeterTransformerPairing
 # from sdsmc import OnlinePhaseChangePoint
 # from sdsmc import PhaseIdentification
+#TODO: set up imports froms other sub-packages
 
 #TODO: import the specific functions from the submodules that you want to expose to the user
 
