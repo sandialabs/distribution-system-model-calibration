@@ -1,9 +1,10 @@
 if __package__ in [None, '']:
     import MeterTransformerPairing
+    import OnlinePhaseChangePoint
 else:
     from . import MeterTransformerPairing
+    from . import OnlinePhaseChangePoint
 
-# from . import OnlinePhaseChangePoint
 # from . import PhaseIdentification
 #TODO: set up imports froms other sub-packages
 #TODO: import the specific functions from the submodules that you want to expose to the user
