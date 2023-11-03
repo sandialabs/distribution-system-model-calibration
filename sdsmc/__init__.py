@@ -1,7 +1,7 @@
 if __package__ in [None, '']:
     from MeterTransformerPairing import M2TFuncs
 else:
-    from sdsmc.MeterTransformerPairing import M2TFuncs
+    from sdsmc import MeterTransformerPairing
 
 # from sdsmc import OnlinePhaseChangePoint
 # from sdsmc import PhaseIdentification
