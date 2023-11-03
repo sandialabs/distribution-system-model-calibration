@@ -1,7 +1,7 @@
 if __package__ in [None, '']:
     import MeterTransformerPairing
 else:
-    from . import MeterTransformerPairing
+    from sdsmc import MeterTransformerPairing
 
 # from sdsmc import OnlinePhaseChangePoint
 # from sdsmc import PhaseIdentification
