@@ -2,7 +2,7 @@
 
 from setuptools import setup
 
-with open('README.md') as f:
+with open('README.MD') as f:
 	long_description = f.read()
 	
 reqs = open('requirements.txt').readlines()
