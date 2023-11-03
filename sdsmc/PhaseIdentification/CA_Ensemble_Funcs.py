@@ -57,7 +57,10 @@ import numpy as np
 from copy import deepcopy
 
 # Import - Custom Libraries
-import PhaseIdent_Utils as PIUtils
+if __package__ in [None, '']:
+    import PhaseIdent_Utils as PIUtils
+else:
+    from . import PhaseIdent_Utils as PIUtils
 
 ###############################################################################
 #

@@ -92,176 +92,167 @@ import pandas as pd
 
 
 # Custom Libraries
-import PhaseIdent_Utils as PIUtils
-import SensorMethod_Funcs as SensMethod
-
-##############################################################################
-
-##############################################################################
-#                    Load Sample Data
-
-currentDirectory = Path.cwd()
-filePath = Path(currentDirectory.parent,'SampleData')
-
-filename = Path(filePath,'VoltageData_AMI.npy')
-voltageInputCust = np.load(filename)
-filename = Path(filePath,'VoltageData_Sensor.npy')
-voltageInputSens = np.load(filename)
-filename = Path(filePath,'PhaseLabels_Sensor.npy')
-sensPhases = np.load(filename)
-filename = Path(filePath,'SensorIDs.npy')
-sensIDs = list(np.load(filename))
-filename = Path(filePath,'PhaseLabelsTrue_AMI.npy')
-phaseLabelsTrue = np.load(filename)
-filename = Path(filePath,'PhaseLabelsErrors_AMI.npy')
-phaseLabelsErrors = np.load(filename)
-filename = Path(filePath,'CustomerIDs_AMI.npy')
-custIDInput = list(np.load(filename))
-
-
-
-##############################################################################
-#
-
-
-
-# Data pre-processing steps
-# This converts the original voltage timeseries (assumed to be in volts) into per-unit representation
-vNorm = PIUtils.ConvertToPerUnit_Voltage(voltageInputCust)
-# This takes the difference between adjacent measurements, converting the timeseries into a per-unit, change in voltage timeseries
-vNDV = PIUtils.CalcDeltaVoltage(vNorm)
-vSensNorm = PIUtils.ConvertToPerUnit_Voltage(voltageInputSens)
-sensNDV = PIUtils.CalcDeltaVoltage(vSensNorm)
-
-
-
-# windowSize is the number of measurments used in each window for calculating 
-#   the median correlation coefficient value between each customer and all 
-#   sensor datastream
-windowSize = 96 
-
-# ccDropFilter is a threshold value.  If the correlation coefficient 
-#   separation value (the difference between the highest and next highest CC 
-#   for a single sensor), then those correlation coefficients are dropped
-ccDropFilter = 0.06 
-ccDropFlag = True # Flag to use the correlation coefficient separation filtering or not
-
-# Run Sensor-based Phase Identification Method - see function documentation in SensorMethod_Funcs.py
-predictedPhaseLabels,custIDFound,noVotesIndex,noVotesIDs, omittedCust,\
-confScoreCombined,sensVotesConfScore, ccSeparation,\
-winVotesConfScore,custWindowCounts  = SensMethod.AssignPhasesUsingSensors(vNDV,sensNDV,
-                                                               custIDInput, sensIDs, 
-                                                               sensPhases,windowSize,
-                                                               dropLowCCSepFlag=ccDropFlag,
-                                                               numVotes=5,ccSepThresh=ccDropFilter)
-
-
-# Remove customers which were omitted from analysis due to missing data
-if predictedPhaseLabels.shape[1] != phaseLabelsTrue.shape[1]:
-    phaseLabelsFound = np.delete(phaseLabelsTrue,noVotesIndex,axis=1)
-    phaseLabelsErrorsFound = np.delete(phaseLabelsErrors,noVotesIndex,axis=1)
+if __package__ in [None, '']:
+    import PhaseIdent_Utils as PIUtils
+    import SensorMethod_Funcs as SensMethod
 else:
-    phaseLabelsFound = phaseLabelsTrue
-    phaseLabelsErrorsFound = phaseLabelsErrors
+    from . import PhaseIdent_Utils as PIUtils
+    from . import SensorMethod_Funcs as SensMethod
 
+if __name__ == '__main__':
 
-# Determine customers with different predicted phase labels than predicted 
-diffIndices = np.where(predictedPhaseLabels!=phaseLabelsErrorsFound)[1]
-diffIDs = list(np.array(custIDFound)[diffIndices])
-newPhaseLabels = np.expand_dims(predictedPhaseLabels[0,diffIndices],axis=0)
-orgDiffPhaseLabels = np.expand_dims(phaseLabelsErrors[0,diffIndices],axis=0)
-totalPredicted = len(diffIDs)
+    ##############################################################################
 
+    ##############################################################################
+    #                    Load Sample Data
 
-#Filter Results by confidence scores
-filDiff,filNPL, filOrgDiff = PIUtils.FilterPredictedCustomersByConf(diffIDs,custIDFound,newPhaseLabels,orgDiffPhaseLabels,winVotesConfScore=winVotesConfScore,
-                                       ccSeparation=ccSeparation,sensVotesConfScore=sensVotesConfScore,combConfScore=confScoreCombined,winVotesThresh=0.75, 
-                                       ccSepThresh=-1,sensVotesThresh=0.75,combConfThresh=-1)        
+    currentDirectory = Path.cwd()
+    filePath = Path(currentDirectory.parent,'SampleData')
 
-
-# Compare predicted results to the ground-truth phase labels
-orgDiff = np.where(predictedPhaseLabels!=phaseLabelsFound)[1]
-accuracy = (((phaseLabelsFound.shape[1])-len(orgDiff)) / phaseLabelsFound.shape[1]) * 100
-
-
-print('Sensor-based Phase Identification Results')
-print('')
-print('Results compared to the original phase labels:')
-print('There were ' + str(len(diffIDs)) + ' customers whose predicted phase labels are different from the original phase labels')
-print('Afer filtering using confidence scores, there are ' + str(len(filDiff)) + ' customers with different phase labels')
-
-print('')
-
-print('Results compared to the ground truth phase labels:')
-print('There are ' + str(len(orgDiff)) + ' customers with incorrect phase labels')
-print('The accuracy of the predicted labels compared to the ground truth is ' + str(accuracy) + '%')
-
-
-# Create output list which includes any customers omitted from the analysis due to missing data 
-# Those customers will be at the end of the list and have a predicted phase and silhouette coefficient of -99 to indicate that they were not included in the analysis
-if len(noVotesIndex) !=0:
-        phaseLabelsOrg_FullList, phaseLabelsPred_FullList, \
-            phaseLabelsTrue_FullList,custID_FullList, \
-                ccSep_FullList, winVotes_FullList, \
-                    sensVotes_FullList, combConf_FullList = PIUtils.CreateFullListCustomerResults_SensMeth(phaseLabelsErrorsFound, \
-                                                                                                        phaseLabelsErrors,\
-                                                                                                            phaseLabelsTrue, \
-                                                                                                            custIDFound, \
-                                                                                                                custIDInput, \
-                                                                                                                noVotesIDs,\
-                                                                                                                    predictedPhaseLabels,\
-                                                                                                                    ccSeparation,\
-                                                                                                                        winVotesConfScore,\
-                                                                                                                        sensVotesConfScore,\
-                                                                                                                            confScoreCombined)
-
-
-else:
-    phaseLabelsOrg_FullList = phaseLabelsErrors
-    phaseLabelsPred_FullList = predictedPhaseLabels
-    phaseLabelsTrue_FullList = phaseLabelsTrue
-    custID_FullList = custIDInput
-    ccSep_FullList = ccSeparation
-    winVotes_FullList = winVotesConfScore
-    sensVotes_FullList = sensVotesConfScore
-    combConf_FullList = confScoreCombined
+    filename = Path(filePath,'VoltageData_AMI.npy')
+    voltageInputCust = np.load(filename)
+    filename = Path(filePath,'VoltageData_Sensor.npy')
+    voltageInputSens = np.load(filename)
+    filename = Path(filePath,'PhaseLabels_Sensor.npy')
+    sensPhases = np.load(filename)
+    filename = Path(filePath,'SensorIDs.npy')
+    sensIDs = list(np.load(filename))
+    filename = Path(filePath,'PhaseLabelsTrue_AMI.npy')
+    phaseLabelsTrue = np.load(filename)
+    filename = Path(filePath,'PhaseLabelsErrors_AMI.npy')
+    phaseLabelsErrors = np.load(filename)
+    filename = Path(filePath,'CustomerIDs_AMI.npy')
+    custIDInput = list(np.load(filename))
 
 
 
-# Write outputs to csv file
-df = pd.DataFrame()
-df['customer ID'] = custID_FullList
-df['Original Phase Labels (with errors)'] = phaseLabelsOrg_FullList[0,:]
-df['Predicted Phase Labels'] = phaseLabelsPred_FullList[0,:]
-df['Actual Phase Labels'] = phaseLabelsTrue_FullList[0,:]
-df['Correlation Coefficient Separation Score'] = ccSep_FullList
-df['Window Voting Confidence Score'] = winVotes_FullList
-df['Sensor Voting Confidence Score'] = sensVotes_FullList
-df['Combined Confidence Score'] = combConf_FullList
-df.to_csv('outputs_SensorMethod.csv')
-print('Predicted phase labels written to outputs_SensorMethod.csv')
-
-# Confidence Score Plots
-PIUtils.PlotHistogramOfWinVotesConfScore(winVotesConfScore)
-PIUtils.PlotHistogramOfCombinedConfScore(confScoreCombined)
-PIUtils.PlotHistogramOfSensVotesConfScore(sensVotesConfScore)
-PIUtils.PlotHistogramOfCCSeparation(ccSeparation,xLim=-1)
+    ##############################################################################
+    #
 
 
 
-##############################################################################
+    # Data pre-processing steps
+    # This converts the original voltage timeseries (assumed to be in volts) into per-unit representation
+    vNorm = PIUtils.ConvertToPerUnit_Voltage(voltageInputCust)
+    # This takes the difference between adjacent measurements, converting the timeseries into a per-unit, change in voltage timeseries
+    vNDV = PIUtils.CalcDeltaVoltage(vNorm)
+    vSensNorm = PIUtils.ConvertToPerUnit_Voltage(voltageInputSens)
+    sensNDV = PIUtils.CalcDeltaVoltage(vSensNorm)
 
 
 
+    # windowSize is the number of measurments used in each window for calculating 
+    #   the median correlation coefficient value between each customer and all 
+    #   sensor datastream
+    windowSize = 96 
+
+    # ccDropFilter is a threshold value.  If the correlation coefficient 
+    #   separation value (the difference between the highest and next highest CC 
+    #   for a single sensor), then those correlation coefficients are dropped
+    ccDropFilter = 0.06 
+    ccDropFlag = True # Flag to use the correlation coefficient separation filtering or not
+
+    # Run Sensor-based Phase Identification Method - see function documentation in SensorMethod_Funcs.py
+    predictedPhaseLabels,custIDFound,noVotesIndex,noVotesIDs, omittedCust,\
+    confScoreCombined,sensVotesConfScore, ccSeparation,\
+    winVotesConfScore,custWindowCounts  = SensMethod.AssignPhasesUsingSensors(vNDV,sensNDV,
+                                                                custIDInput, sensIDs, 
+                                                                sensPhases,windowSize,
+                                                                dropLowCCSepFlag=ccDropFlag,
+                                                                numVotes=5,ccSepThresh=ccDropFilter)
+
+
+    # Remove customers which were omitted from analysis due to missing data
+    if predictedPhaseLabels.shape[1] != phaseLabelsTrue.shape[1]:
+        phaseLabelsFound = np.delete(phaseLabelsTrue,noVotesIndex,axis=1)
+        phaseLabelsErrorsFound = np.delete(phaseLabelsErrors,noVotesIndex,axis=1)
+    else:
+        phaseLabelsFound = phaseLabelsTrue
+        phaseLabelsErrorsFound = phaseLabelsErrors
+
+
+    # Determine customers with different predicted phase labels than predicted 
+    diffIndices = np.where(predictedPhaseLabels!=phaseLabelsErrorsFound)[1]
+    diffIDs = list(np.array(custIDFound)[diffIndices])
+    newPhaseLabels = np.expand_dims(predictedPhaseLabels[0,diffIndices],axis=0)
+    orgDiffPhaseLabels = np.expand_dims(phaseLabelsErrors[0,diffIndices],axis=0)
+    totalPredicted = len(diffIDs)
+
+
+    #Filter Results by confidence scores
+    filDiff,filNPL, filOrgDiff = PIUtils.FilterPredictedCustomersByConf(diffIDs,custIDFound,newPhaseLabels,orgDiffPhaseLabels,winVotesConfScore=winVotesConfScore,
+                                        ccSeparation=ccSeparation,sensVotesConfScore=sensVotesConfScore,combConfScore=confScoreCombined,winVotesThresh=0.75, 
+                                        ccSepThresh=-1,sensVotesThresh=0.75,combConfThresh=-1)        
+
+
+    # Compare predicted results to the ground-truth phase labels
+    orgDiff = np.where(predictedPhaseLabels!=phaseLabelsFound)[1]
+    accuracy = (((phaseLabelsFound.shape[1])-len(orgDiff)) / phaseLabelsFound.shape[1]) * 100
+
+
+    print('Sensor-based Phase Identification Results')
+    print('')
+    print('Results compared to the original phase labels:')
+    print('There were ' + str(len(diffIDs)) + ' customers whose predicted phase labels are different from the original phase labels')
+    print('Afer filtering using confidence scores, there are ' + str(len(filDiff)) + ' customers with different phase labels')
+
+    print('')
+
+    print('Results compared to the ground truth phase labels:')
+    print('There are ' + str(len(orgDiff)) + ' customers with incorrect phase labels')
+    print('The accuracy of the predicted labels compared to the ground truth is ' + str(accuracy) + '%')
+
+
+    # Create output list which includes any customers omitted from the analysis due to missing data 
+    # Those customers will be at the end of the list and have a predicted phase and silhouette coefficient of -99 to indicate that they were not included in the analysis
+    if len(noVotesIndex) !=0:
+            phaseLabelsOrg_FullList, phaseLabelsPred_FullList, \
+                phaseLabelsTrue_FullList,custID_FullList, \
+                    ccSep_FullList, winVotes_FullList, \
+                        sensVotes_FullList, combConf_FullList = PIUtils.CreateFullListCustomerResults_SensMeth(phaseLabelsErrorsFound, \
+                                                                                                            phaseLabelsErrors,\
+                                                                                                                phaseLabelsTrue, \
+                                                                                                                custIDFound, \
+                                                                                                                    custIDInput, \
+                                                                                                                    noVotesIDs,\
+                                                                                                                        predictedPhaseLabels,\
+                                                                                                                        ccSeparation,\
+                                                                                                                            winVotesConfScore,\
+                                                                                                                            sensVotesConfScore,\
+                                                                                                                                confScoreCombined)
+
+
+    else:
+        phaseLabelsOrg_FullList = phaseLabelsErrors
+        phaseLabelsPred_FullList = predictedPhaseLabels
+        phaseLabelsTrue_FullList = phaseLabelsTrue
+        custID_FullList = custIDInput
+        ccSep_FullList = ccSeparation
+        winVotes_FullList = winVotesConfScore
+        sensVotes_FullList = sensVotesConfScore
+        combConf_FullList = confScoreCombined
 
 
 
+    # Write outputs to csv file
+    df = pd.DataFrame()
+    df['customer ID'] = custID_FullList
+    df['Original Phase Labels (with errors)'] = phaseLabelsOrg_FullList[0,:]
+    df['Predicted Phase Labels'] = phaseLabelsPred_FullList[0,:]
+    df['Actual Phase Labels'] = phaseLabelsTrue_FullList[0,:]
+    df['Correlation Coefficient Separation Score'] = ccSep_FullList
+    df['Window Voting Confidence Score'] = winVotes_FullList
+    df['Sensor Voting Confidence Score'] = sensVotes_FullList
+    df['Combined Confidence Score'] = combConf_FullList
+    df.to_csv('outputs_SensorMethod.csv')
+    print('Predicted phase labels written to outputs_SensorMethod.csv')
+
+    # Confidence Score Plots
+    PIUtils.PlotHistogramOfWinVotesConfScore(winVotesConfScore)
+    PIUtils.PlotHistogramOfCombinedConfScore(confScoreCombined)
+    PIUtils.PlotHistogramOfSensVotesConfScore(sensVotesConfScore)
+    PIUtils.PlotHistogramOfCCSeparation(ccSeparation,xLim=-1)
 
 
 
-
-
-
-
-
-
+    ##############################################################################

@@ -55,9 +55,10 @@ from scipy import stats
 
 
 # Import custom libraries
-import PhaseIdent_Utils as PIUtils
-
-
+if __package__ in [None, '']:
+    import PhaseIdent_Utils as PIUtils
+else:
+    from . import PhaseIdent_Utils as PIUtils
 
 
 ###############################################################################
