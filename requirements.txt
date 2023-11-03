@@ -1,4 +1,3 @@
 numpy
 haversine
 scikit-learn
-#TODO: find minimum set of required packages to make this work.
