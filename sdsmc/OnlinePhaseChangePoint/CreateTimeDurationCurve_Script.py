@@ -48,9 +48,12 @@ from pathlib import Path
 import numpy as np
 
 # Import Custom Libraries
-import ChangepointUtils as CPUtils
-import OnlineChangepointFunctions as OCF
-
+if __package__ in [None, '']:
+    import ChangepointUtils as CPUtils
+    import OnlineChangepointFunctions as OCF
+else:
+    from . import ChangepointUtils as CPUtils
+    from . import OnlineChangepointFunctions as OCF
 
 ###############################################################################
 #

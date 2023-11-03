@@ -80,9 +80,13 @@ import matplotlib.pyplot as plt
 from scipy import stats
 
 # Import Custom Libraries
-import ChangepointUtils as CPUtils
+if __package__ in [None, '']:
+    import ChangepointUtils as CPUtils
+    import OnlineChangepointFunctions as OCF
+else:
+    from . import ChangepointUtils as CPUtils
+    from . import OnlineChangepointFunctions as OCF
     
-
 def run_TDCMonteCarlo(phaseLabelsInput,phaseLabelErrors,newVoltage,custIDs,misLabeledCusts,windowSize=384,kVector=[3,6,12,15,30],savePath=-1):
     '''
     This functions runs a single instance of the monte carlo used to create
