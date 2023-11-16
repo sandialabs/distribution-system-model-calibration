@@ -18,7 +18,7 @@ Questions or inquiries can be directed to Logan Blakely (Sandia National Laborat
 
 To install:
 
-```shell
+```bash
 python -m pip install git+https://github.com/sandialabs/distribution-system-model-calibration
 ```
 
