@@ -69,7 +69,7 @@ else:
 
 #TODO: all the paths should be relative to the file. Consider using this_file_dir = _os.path.dirname(__file__). This occurs in most of the scripts.
 
-def transformerPairing( voltageData_AMI: str, realPowerData_AMI: str, reactivePowerData_AMI: str, customerIDs_AMI: str, useTrueLabels: bool = True, transLabelsErrors_csv: str, transLabelsTrue_csv: str, saveResultsPath ):
+def transformerPairing( voltageData_AMI: str, realPowerData_AMI: str, reactivePowerData_AMI: str, customerIDs_AMI: str, transLabelsErrors_csv: str, transLabelsTrue_csv: str, saveResultsPath, useTrueLabels: bool = True, ):
     ###############################################################################
     # Data pre-processing
     # Convert CSV input files to numpy arrays
