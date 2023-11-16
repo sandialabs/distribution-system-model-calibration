@@ -16,17 +16,19 @@ Questions or inquiries can be directed to Logan Blakely (Sandia National Laborat
 
 ### Installation and Usage
 
+To install:
+
 `python -m pip install git+https://github.com/sandialabs/distribution-system-model-calibration`
 
-#TODO: Add instructions for using the code, i.e. point out the functions in the package that will return results.
+To execute, for example, the Meter Transformer Pairing analytic:
+
+```python
 import sdsmc
-
-
-For MeterTransformerPairing only:
 
 from sdsmc import MeterTransformerPairing
 
-MeterTransformerPairing.TransformerPairing.transformerPairing( voltageData_AMI: str, realPowerData_AMI: str, reactivePowerData_AMI: str, customerIDs_AMI: str, transLabelsErrors_csv: str, transLabelsTrue_csv: str, saveResultsPath, useTrueLabels: bool = True, )
+MeterTransformerPairing.TransformerPairing.transformerPairing( voltageData_AMI: str, realPowerData_AMI: str, reactivePowerData_AMI: str, customerIDs_AMI: str, transLabelsErrors_csv: str, transLabelsTrue_csv: str, saveResultsPath, useTrueLabels: bool = True)
+```
 
 The first 4 arguments require AMI data formatted as a .CSV file. The AMI data of each row is aligned to the customers row in the customerIDs_AMI CSV file.
 Ex: customer_0 in row_0 of customerIDs_AMI
