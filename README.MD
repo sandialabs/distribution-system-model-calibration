@@ -27,9 +27,17 @@ To execute, for example, the Meter Transformer Pairing analytic:
 ```python
 import sdsmc
 
-from sdsmc import MeterTransformerPairing
+from sdsmc.TransformerPairing.MeterTransformerPairing import transformerPairing
 
-MeterTransformerPairing.TransformerPairing.transformerPairing( voltageData_AMI: str, realPowerData_AMI: str, reactivePowerData_AMI: str, customerIDs_AMI: str, transLabelsErrors_csv: str, transLabelsTrue_csv: str, saveResultsPath, useTrueLabels: bool = True)
+transformerPairing(
+    voltageData_AMI,
+    realPowerData_AMI,
+    reactivePowerData_AMI,
+    customerIDs_AMI,
+    transLabelsErrors_csv,
+    transLabelsTrue_csv,
+    saveResultsPath,
+    useTrueLabels=True)
 ```
 
 The first 4 arguments require AMI data formatted as a .CSV file. The AMI data of each row is aligned to the customers row in the customerIDs_AMI CSV file.
