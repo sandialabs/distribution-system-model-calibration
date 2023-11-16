@@ -7,9 +7,6 @@ else:
     from . import OnlinePhaseChangePoint
     from . import PhaseIdentification
 
-def meter_transformer_pairing(in_csv,out_csv):
-    pass #TODO: implement by calling the correct submodule function
-
 def online_phase_change_point(in_csv,out_csv):
     pass #TODO: implement by calling the correct submodule function
 

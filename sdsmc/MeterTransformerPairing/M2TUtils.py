@@ -44,6 +44,7 @@ from sklearn.metrics import mean_squared_error
 import pickle
 import haversine as hs
 from haversine import Unit
+import pandas as pd
 
 
 ###############################################################################
@@ -153,7 +154,7 @@ def CC_EnsMedian(voltage,windowSize,custID):
                     were removed from all windows
             """    
         
-    print('Starting Correlation Coefficient calculation')
+    #print('Starting Correlation Coefficient calculation')
     ensTotal = int(np.floor(voltage.shape[0] / windowSize))
     ccMatrixAll = np.zeros((voltage.shape[1],voltage.shape[1],ensTotal),dtype=float)
     ccMatrix = np.zeros((voltage.shape[1],voltage.shape[1]),dtype=float)
@@ -879,7 +880,16 @@ def CreateDistanceMatrix(latLonDict, labels,distTypeFlag='euclidean',units='m'):
     
 # End of CreateDistanceMatrix function        
 
+##############################################################################
+#
+#       ConvertCSVtoNPY
+#
 
+def ConvertCSVtoNPY( csv_file ):
+    dataSet = pd.read_csv( csv_file, header=None )
+    return np.array( pd.DataFrame(dataSet).values )
+
+# End ConvertCSVtoNPY
 
 
 

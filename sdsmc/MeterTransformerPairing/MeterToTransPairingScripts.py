@@ -74,7 +74,7 @@ if __name__ == '__main__':
     useTrueLabels = True # specifies whether to load and use ground truth transformer labels, this will be true when using the provided sample data
 
     # Load Sample data
-    currentDirectory = Path.cwd()
+    currentDirectory = Path(__file__).parent.resolve()
     filePath = Path(currentDirectory.parent,'SampleData')
     filename = Path(filePath,'VoltageData_AMI.npy')
     voltageInput = np.load(filename)
