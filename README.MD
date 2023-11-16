@@ -19,3 +19,19 @@ Questions or inquiries can be directed to Logan Blakely (Sandia National Laborat
 `python -m pip install git+https://github.com/sandialabs/distribution-system-model-calibration`
 
 #TODO: Add instructions for using the code, i.e. point out the functions in the package that will return results.
+import sdsmc
+
+
+For MeterTransformerPairing only:
+
+from sdsmc import MeterTransformerPairing
+
+MeterTransformerPairing.TransformerPairing.transformerPairing( voltageData_AMI: str, realPowerData_AMI: str, reactivePowerData_AMI: str, customerIDs_AMI: str, transLabelsErrors_csv: str, transLabelsTrue_csv: str, saveResultsPath, useTrueLabels: bool = True, )
+
+The first 4 arguments require AMI data formatted as a .CSV file. The AMI data of each row is aligned to the customers row in the customerIDs_AMI CSV file.
+Ex: customer_0 in row_0 of customerIDs_AMI
+    row_0 in voltageData_AMI, realPowerData_AMI, and reactivePowerData_AMI include comma separate data values.
+
+For more information, check out the test data in the OMF for working examples: https://github.com/dpinney/omf/tree/master/omf/static/testFiles/transformerPairing
+
+Please also for additional clarification of the formatting of the first 4 arguments containing CSV AMI data, check out the Open Modeling Framework Wikipedia page that uses this function here: https://github.com/dpinney/omf/wiki/Models-~-transformerPairing
