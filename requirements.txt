@@ -1,3 +1,8 @@
 numpy
 haversine
 scikit-learn
+pathlib
+matplotlib
+scipy
+pandas
+seaborn

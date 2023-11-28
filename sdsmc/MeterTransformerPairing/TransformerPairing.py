@@ -83,7 +83,7 @@ def transformerPairing( voltageData_AMI: str, realPowerData_AMI: str, reactivePo
     transLabelsErrors = M2TUtils.ConvertCSVtoNPY( transLabelsErrors_csv )
 
     if useTrueLabels:
-        transLabelsTrue = M2TUtils.ConvertCSVtoNPY.transLabelsTrue_csv
+        transLabelsTrue = M2TUtils.ConvertCSVtoNPY (transLabelsTrue_csv )
 
     ###############################################################################
 
