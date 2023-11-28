@@ -2,7 +2,7 @@
 
 from setuptools import setup, find_packages
 
-with open('README.MD') as f:
+with open('README.MD',encoding="utf8") as f:
 	long_description = f.read()
 
 reqs = open('requirements.txt').readlines()
