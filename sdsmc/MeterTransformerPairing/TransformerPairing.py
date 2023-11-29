@@ -39,6 +39,7 @@ import numpy as np
 #import datetime
 #from copy import deepcopy
 from pathlib import Path
+from pathlib import PosixPath
 import pandas as pd
 
 # Import custom libraries
@@ -53,23 +54,35 @@ else:
 
 
 ###############################################################################
-# Input Data Notes
+#
+#                           transformerPairing()
+#
+def run( voltageData_AMI: str, realPowerData_AMI: str, reactivePowerData_AMI: str, customerIDs_AMI: str, transLabelsErrors_csv: str, transLabelsTrue_csv: str, saveResultsPath: PosixPath, useTrueLabels: bool = True, ):
+    """   This function is a wrapper for the MeterToTransPairingScript.py file.
 
-# custIDInput: list of str (customers) - the list of customer IDs as strings
-# transLabelsTrue: numpy array of int (1,customers) - the transformer labels for each customer as integers.  This is the ground truth transformer labels
-# transLabelsErrors: numpy array of int (1,customers) - the transformer labels for each customer which may contain errors.
-    # In the sample data, customer_3 transformer was changed from 1 to 2 and customer_53 transformer was changed from 23 to 22
-# voltageInput: numpy array of float (measurements,customers) - the raw voltage AMI measurements for each customer in Volts
-# pDataInput: numpy array of float (measurements, customers) - the real power measurements for each customer in Watts
-# qDataInput: numpy array of float (measurements, customers) - the reactive power measurements for each customer in VAr
+          Note that the indexing of all variables above should match in the customer index, i.e. custIDInput[0], transLabelsInput[0,0], voltageInput[:,0], pDataInput[:,0], and qDataInput[:,0] should all be the same customer
 
-# Note that the indexing of all variables above should match in the customer index, i.e. custIDInput[0], transLabelsInput[0,0], voltageInput[:,0], pDataInput[:,0], and qDataInput[:,0] should all be the same customer
+          Parameters
+          ---------
+            voltageData_AMI: CSV of float (measurements,customers) - the raw voltage AMI measurements for each customer in Volts
+            realPowerData_AMI: CSV of float (measurements, customers) - the real power measurements for each customer in Watts
+            reactivePowerData_AMI: CSV of float (measurements, customers) - the reactive power measurements for each customer in VAr
+            customerIDs_AMI: list of str (customers) - the list of customer IDs as strings
+            transLabelsErrors_csv: CSV of int (1,customers) - the transformer labels for each customer which may contain errors.
+                In the sample data, customer_3 transformer was changed from 1 to 2 and customer_53 transformer was changed from 23 to 22
+            transLabelsTrue_csv: CSV of int (1,customers) - the transformer labels for each customer as integers.  This is the ground truth transformer labels
+            saveResultsPath: Pathlib Path
+            useTrueLabels: boolean value
 
-###############################################################################
-
-#TODO: all the paths should be relative to the file. Consider using this_file_dir = _os.path.dirname(__file__). This occurs in most of the scripts.
-
-def transformerPairing( voltageData_AMI: str, realPowerData_AMI: str, reactivePowerData_AMI: str, customerIDs_AMI: str, transLabelsErrors_csv: str, transLabelsTrue_csv: str, saveResultsPath, useTrueLabels: bool = True, ):
+          Returns
+            Output files are prefixxed with "outputs_"
+            ---------
+            if useTrueLabels:
+                outputs_ImprovementStats: CSV - highlights the number of transformers corrected
+            outputs_PredictedTransformerLabels: CSV - TBD
+            outputs_RankedFlaggedTransformers: CSV - TBD
+            outputs_ChangedCustomers_M2T: CSV - TBD
+    """
     ###############################################################################
     # Data pre-processing
     # Convert CSV input files to numpy arrays
@@ -83,7 +96,7 @@ def transformerPairing( voltageData_AMI: str, realPowerData_AMI: str, reactivePo
     transLabelsErrors = M2TUtils.ConvertCSVtoNPY( transLabelsErrors_csv )
 
     if useTrueLabels:
-        transLabelsTrue = M2TUtils.ConvertCSVtoNPY (transLabelsTrue_csv )
+        transLabelsTrue = M2TUtils.ConvertCSVtoNPY(transLabelsTrue_csv)
 
     ###############################################################################
 
@@ -155,23 +168,14 @@ def transformerPairing( voltageData_AMI: str, realPowerData_AMI: str, reactivePo
     #print('Meter to Transformer Pairing Algorithm Results')
     # M2TUtils.PrettyPrintChangedCustomers(predictedTransLabels,transLabelsErrors,custIDInput)
 
-
     # This function calculates two transformer level metrics of accuracy that we have been using
     # incorrectTrans is a list of incorrect transformers where incorrect means customers added or omitted to the correct grouping
     # This defines Transformer Accuracy, i.e. the number of correct transformers out of the total transformers
     # incorrectPairedIDs lists the customers from incorrect trans which allows us to define 
     # Customer Pairing Accuracy which is the number of customers in the correct groupings, i.e. no customers added or omitted from the grouping
-    if useTrueLabels:
-        incorrectTrans,incorrectPairedIndices, incorrectPairedIDs= M2TUtils.CalcTransPredErrors(predictedTransLabels,transLabelsTrue,custIDInput,singleCustMarker=-999)
-        incorrectTransOrg,incorrectPairedIndicesOrg, incorrectPairedIDsOrg= M2TUtils.CalcTransPredErrors(transLabelsErrors,transLabelsTrue,custIDInput, singleCustMarker=-999)
-        improvementNum = (len(incorrectTransOrg) - len(incorrectTrans))
-        improvementPercent = np.round(((improvementNum  / len(incorrectTransOrg)) * 100),decimals=2)
-        #print('There were originally ' + str(len(incorrectTransOrg)) + ' incorrect transformer groupings with the injected incorrect labels')
-        #print('After running algorithm there are ' + str(len(incorrectTrans)) + ' incorrect transformer groupings')
-        #print(str(improvementNum) + ' transformer groupings were corrected, which is an improvement of ' + str(improvementPercent) + '%')
-        # In the sample data, these will be empty because all customers were correctly grouped together by their service transformer.  
-        
 
+    if useTrueLabels:
+        M2TUtils.ImprovementAnalysis(predictedTransLabels, transLabelsErrors, transLabelsTrue, custIDInput)
 
     # Write output to a csv file
     if useTrueLabels:
@@ -194,13 +198,12 @@ def transformerPairing( voltageData_AMI: str, realPowerData_AMI: str, reactivePo
     df.to_csv(Path(saveResultsPath,'outputs_RankedFlaggedTransformers.csv'))
     #print('Flagged and ranked transformers written to outputs_RankedFlaggedTransformers.csv')
 
-
-
     changedIndices = np.where(predictedTransLabels != transLabelsErrors)[1]
     df = pd.DataFrame()
     df['customer ID'] = list(np.array(custIDInput)[changedIndices])
     df['Original Transformer Labels (with Errors)'] = transLabelsErrors[0,changedIndices]
     df['Predicted Transformer Labels'] = predictedTransLabels[0,changedIndices]
-    filename = 'ChangedCustomers_M2T.csv'
+    filename = 'outputs_ChangedCustomers_M2T.csv'
     df.to_csv(Path(saveResultsPath,filename))
     print('All customers with changed transformer labels written to ChangedCustomers_M2T.csv')
+# End transformerPairing
