@@ -43,6 +43,8 @@ transformerPairing(
 The first 4 arguments require AMI data formatted as a .CSV file. The AMI data of each row is aligned to the customers row in the customerIDs_AMI CSV file.
 Ex: customer_0 in row_0 of customerIDs_AMI
     row_0 in voltageData_AMI, realPowerData_AMI, and reactivePowerData_AMI include comma separate data values.
+    
+Note: If useTrueLabels is true, there will be an additional output file that shows improvement statistics
 
 For more information, check out the test data in the OMF for working examples: https://github.com/dpinney/omf/tree/master/omf/static/testFiles/transformerPairing
 

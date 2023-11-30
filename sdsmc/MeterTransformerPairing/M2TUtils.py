@@ -889,8 +889,29 @@ def ConvertCSVtoNPY( csv_file ):
     dataSet = pd.read_csv( csv_file, header=None )
     return np.array( pd.DataFrame(dataSet).values )
 
-# End ConvertCSVtoNPY
+# End ConvertCSVtoNPY function
 
+##############################################################################
+#
+#       ImprovementAnalysis
+#
+def ImprovementAnalysis(saveResultsPath, predictedTransLabels, transLabelsErrors, transLabelsTrue, custIDInput):
+    incorrectTrans, incorrectPairedIndices, incorrectPairedIDs = CalcTransPredErrors(predictedTransLabels,transLabelsTrue,custIDInput,singleCustMarker=-999)
+    incorrectTransOrg, incorrectPairedIndicesOrg, incorrectPairedIDsOrg = CalcTransPredErrors(transLabelsErrors,transLabelsTrue,custIDInput, singleCustMarker=-999)
+    improvementNum = (len(incorrectTransOrg) - len(incorrectTrans))
+    improvementPercent = np.round(((improvementNum  / len(incorrectTransOrg)) * 100),decimals=2)
+
+    stats = {
+        'Num of incorrect transformers before': len(incorrectTransOrg),
+        'Num of incorrect transformers after': len(incorrectTrans),
+        'Total transformer improvement': improvementNum,
+        'Improvement percentage': improvementPercent
+    }
+
+    df = pd.DataFrame( [stats] )
+    df.to_csv( Path(saveResultsPath, 'outputs_ImprovementStats.csv'))
+
+# End improvementAnalysis function
 
 
 
