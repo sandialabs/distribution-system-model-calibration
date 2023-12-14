@@ -172,7 +172,7 @@ def run( voltageData_AMI: str, realPowerData_AMI: str, reactivePowerData_AMI: st
     # Customer Pairing Accuracy which is the number of customers in the correct groupings, i.e. no customers added or omitted from the grouping
 
     if useTrueLabels:
-        M2TUtils.ImprovementAnalysis(predictedTransLabels, transLabelsErrors, transLabelsTrue, custIDInput)
+        M2TUtils.ImprovementAnalysis(saveResultsPath, predictedTransLabels, transLabelsErrors, transLabelsTrue, custIDInput)
 
     # Write output to a csv file
     if useTrueLabels:
