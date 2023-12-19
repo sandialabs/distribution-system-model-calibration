@@ -1,4 +1,14 @@
 **/__pycache__
-*/.png
-*/.csv
+**/.png
+**/.pkl
+**/outputs_PredictedTransformerLabels.csv
+**/outputs_RankedFlaggedTransformers.csv
+**/ChangedCustomers_M2T.csv
+**/outputs_ImprovementStats.csv
+**/outputsAll_M2T_NoQ.csv
+**/ChangedCustomers_M2T_NoQ.csv
+**/outputs_CAEnsMethod.csv
+**/outputs_SensorMethod.csv
+**/results.csv
+
 LoganScratchpad.py
