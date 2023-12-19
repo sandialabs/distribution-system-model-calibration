@@ -633,7 +633,7 @@ def PlotNumFlaggedTrans_ThresholdSweep(thresholdValues,allNumFlagged,transLabels
         filePath = Path(savePath, filename)
     else:
         filePath = Path(filename)
-    plt.savefig(filePath)         
+    fig.savefig(filePath)         
 # End of PlotNumFlaggedTrans_ThresholdSweep
 
 
