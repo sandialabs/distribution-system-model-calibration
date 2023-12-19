@@ -1,0 +1,7 @@
+,customer ID,Original Transformer Labels (with Errors),Predicted Transformer Labels
+0,customer_0,1,-2
+1,customer_1,1,-2
+2,customer_2,449,-2
+3,customer_31,59,-1
+4,customer_32,59,-1
+5,customer_33,124,-1
