@@ -64,13 +64,13 @@ def run( voltageData_AMI: str, realPowerData_AMI: str, reactivePowerData_AMI: st
 
           Parameters
           ---------
-            voltageData_AMI: CSV of float (measurements,customers) - the raw voltage AMI measurements for each customer in Volts
-            realPowerData_AMI: CSV of float (measurements, customers) - the real power measurements for each customer in Watts
-            reactivePowerData_AMI: CSV of float (measurements, customers) - the reactive power measurements for each customer in VAr
-            customerIDs_AMI: list of str (customers) - the list of customer IDs as strings
-            transLabelsErrors_csv: CSV of int (1,customers) - the transformer labels for each customer which may contain errors.
+            voltageData_AMI: path to CSV of float (measurements,customers) - the raw voltage AMI measurements for each customer in Volts
+            realPowerData_AMI: path to CSV of float (measurements, customers) - the real power measurements for each customer in Watts
+            reactivePowerData_AMI: path to CSV of float (measurements, customers) - the reactive power measurements for each customer in VAr
+            customerIDs_AMI: path to CSV list of str (customers) - the list of customer IDs as strings
+            transLabelsErrors_csv: path to CSV of int (1,customers) - the transformer labels for each customer which may contain errors.
                 In the sample data, customer_3 transformer was changed from 1 to 2 and customer_53 transformer was changed from 23 to 22
-            transLabelsTrue_csv: CSV of int (1,customers) - the transformer labels for each customer as integers.  This is the ground truth transformer labels
+            transLabelsTrue_csv: path to CSV of int (1,customers) - the transformer labels for each customer as integers.  This is the ground truth transformer labels
             saveResultsPath: Pathlib Path
             useTrueLabels: boolean value
 
