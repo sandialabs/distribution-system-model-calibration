@@ -76,20 +76,26 @@ if __name__ == '__main__':
     # Load Sample data
     currentDirectory = Path(__file__).parent.resolve()
     filePath = Path(currentDirectory.parent,'SampleData')
-    filename = Path(filePath,'VoltageData_AMI.npy')
-    voltageInput = np.load(filename)
-    filename = Path(filePath,'RealPowerData_AMI.npy')
-    pDataInput = np.load(filename)
-    filename = Path(filePath,'ReactivePowerData_AMI.npy')
-    qDataInput = np.load(filename)
-    filename = Path(filePath,'TransformerLabelsErrors_AMI.npy')
-    transLabelsErrors = np.load(filename)
-    filename = Path(filePath,'CustomerIDs_AMI.npy')
-    custIDInput = list(np.load(filename))
+    filenameV = Path(filePath,'VoltageData_AMI.csv')
+    voltageInput = M2TUtils.ConvertCSVtoNPY( filenameV )
+    
+    filenameP = Path(filePath,'RealPowerData_AMI.csv')
+    pDataInput = M2TUtils.ConvertCSVtoNPY( filenameP )
+    
+    filenameQ = Path(filePath,'ReactivePowerData_AMI.csv')
+    qDataInput = M2TUtils.ConvertCSVtoNPY( filenameQ )
+    
+    filenameIDs = Path(filePath,'CustomerIDs_AMI.csv')    
+    with open(filenameIDs, 'r') as file:
+        custIDInput = [x.rstrip() for x in file]
+    
+    filenameTLE = Path(filePath,'TransformerLabelsErrors_AMI.csv')
+    transLabelsErrors = M2TUtils.ConvertCSVtoNPY( filenameTLE )
 
     if useTrueLabels:
-        filename = Path(filePath,'TransformerLabelsTrue_AMI.npy')
-        transLabelsTrue = np.load(filename)
+        filenameTLT = Path(filePath,'TransformerLabelsTrue_AMI.csv')        
+        transLabelsTrue = M2TUtils.ConvertCSVtoNPY(filenameTLT)    
+    
 
     saveResultsPath = Path(currentDirectory,'Results_M2T_pqvlabels')
 

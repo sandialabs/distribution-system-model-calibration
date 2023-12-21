@@ -1378,4 +1378,13 @@ def Ensure3PhaseCustHaveUniqueID(custIDOriginal,phaseLabelsInput,numPhasesInput 
     return custIDUnique, numPhasesNew    
 # End of Ensure3PhaseCustHaveUniqueID Function   
 
-      
+##############################################################################
+#
+#       ConvertCSVtoNPY
+#
+
+def ConvertCSVtoNPY( csv_file ):
+    dataSet = pd.read_csv( csv_file, header=None )
+    return np.array( pd.DataFrame(dataSet).values )
+
+# End ConvertCSVtoNPY function      

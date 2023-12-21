@@ -66,19 +66,27 @@ else:
 #              Load Data and Set Path Names
 #                   
 if __name__ == '__main__':
-    currentDirectory = Path.cwd()
+    
+    currentDirectory = Path(__file__).parent.resolve()
     filePath = Path(currentDirectory.parent,'SampleData')
-    filename = Path(filePath,'ChangePoint_CustIDs.npy')
-    groundtruthIDs = list(np.load(filename))  # The ID list for customers with true changepoints
-    filename = Path(filePath,'Changepoint_PhasesTimesteps.npy')
-    groundtruthTimesteps = np.array(np.load(filename),dtype=int) # The timestep and new phase of the true changepoints
-    filename = Path(filePath,'Changepoint_voltageData.npy')
-    voltageInput = np.load(filename) # AMI voltage timeseries for each customer
-    filename = Path(filePath,'ChangePoint_AllCustIDs.npy')
-    custIDsInput = list(np.load(filename)) # The customer IDs for all customers
-    filename = Path(filePath,'Changepoint_phaseLabels.npy')
-    phaseLabelsInput = np.load(filename) # The original, true phase labels for each customer
-
+    filenameV = Path(filePath,'Changepoint_voltageData.csv')
+    voltageInput = M2TUtils.ConvertCSVtoNPY( filenameV )
+    
+    filenamePLE = Path(filePath,'Changepoint_phaseLabels.csv')
+    phaseLabelsInput = M2TUtils.ConvertCSVtoNPY( filenamePLE )
+    
+    filenameIDs = Path(filePath,'ChangePoint_CustIDs.csv')    
+    with open(filenameIDs, 'r') as file:
+        groundtruthIDs = [x.rstrip() for x in file]
+    
+    filenameIDs = Path(filePath,'ChangePoint_AllCustIDs.csv')    
+    with open(filenameIDs, 'r') as file:
+        custIDsInput = [x.rstrip() for x in file]
+      
+    filenameCPT= Path(filePath,'Changepoint_PhasesTimesteps.csv')        
+    groundtruthTimesteps = M2TUtils.ConvertCSVtoNPY(filenameCPT)    
+        
+    
     # Format ground truth labels as dictionaries
     realEventsIDs = {}
     realEventsPhases = {}

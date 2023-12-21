@@ -106,23 +106,36 @@ if __name__ == '__main__':
     ##############################################################################
     #                    Load Sample Data
 
-    currentDirectory = Path.cwd()
-    filePath = Path(currentDirectory.parent,'SampleData')
+    
 
-    filename = Path(filePath,'VoltageData_AMI.npy')
-    voltageInputCust = np.load(filename)
-    filename = Path(filePath,'VoltageData_Sensor.npy')
-    voltageInputSens = np.load(filename)
-    filename = Path(filePath,'PhaseLabels_Sensor.npy')
-    sensPhases = np.load(filename)
-    filename = Path(filePath,'SensorIDs.npy')
-    sensIDs = list(np.load(filename))
-    filename = Path(filePath,'PhaseLabelsTrue_AMI.npy')
-    phaseLabelsTrue = np.load(filename)
-    filename = Path(filePath,'PhaseLabelsErrors_AMI.npy')
-    phaseLabelsErrors = np.load(filename)
-    filename = Path(filePath,'CustomerIDs_AMI.npy')
-    custIDInput = list(np.load(filename))
+    currentDirectory = Path(__file__).parent.resolve()
+    filePath = Path(currentDirectory.parent,'SampleData')
+    filenameV = Path(filePath,'VoltageData_AMI.csv')
+    voltageInputCust = M2TUtils.ConvertCSVtoNPY( filenameV )
+
+    filenameVS = Path(filePath,'VoltageData_Sensor.csv')
+    voltageInputSens = M2TUtils.ConvertCSVtoNPY( filenameVS )
+
+    filenamePLS = Path(filePath,'PhaseLabels_Sensor.csv')
+    sensPhases = M2TUtils.ConvertCSVtoNPY( filenamePLS )
+    
+    filenamePLE = Path(filePath,'PhaseLabelsErrors_AMI.csv')
+    phaseLabelsErrors = M2TUtils.ConvertCSVtoNPY( filenamePLE )
+    
+    filenameIDs = Path(filePath,'CustomerIDs_AMI.csv')    
+    with open(filenameIDs, 'r') as file:
+        custIDInput = [x.rstrip() for x in file]
+
+    filenameSIDs = Path(filePath,'SensorIDs.csv')    
+    with open(filenameSIDs, 'r') as file:
+        sensIDs = [x.rstrip() for x in file]
+
+    filenamePLT = Path(filePath,'PhaseLabelsTrue_AMI.csv')        
+    phaseLabelsTrue = M2TUtils.ConvertCSVtoNPY(filenamePLT)    
+    
+   
+
+
 
 
 

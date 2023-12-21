@@ -1,5 +1,8 @@
 # Changelog
 
+## [1.2.0] 
+-  Added capability to install library as a python package with function wrappers for each method.  Sample data files were converted from .npy to .csv.
+
 ## [1.1.3]
 - Fixed a bug related to processing of 2/3-phase customers
 

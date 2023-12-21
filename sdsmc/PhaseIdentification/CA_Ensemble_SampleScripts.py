@@ -110,24 +110,28 @@ if __name__ == '__main__':
     ##############################################################################
     #                    Load Sample Data
 
-    currentDirectory = Path.cwd()
+    
+    currentDirectory = Path(__file__).parent.resolve()
     filePath = Path(currentDirectory.parent,'SampleData')
-
-    filename = Path(filePath,'VoltageData_AMI.npy')
-    voltageInputCust = np.load(filename)
-
-    filename = Path(filePath,'PhaseLabelsErrors_AMI.npy')
-    phaseLabelsErrors = np.load(filename)
-    filename = Path(filePath,'CustomerIDs_AMI.npy')
-    custIDInput = list(np.load(filename))
+    filenameV = Path(filePath,'VoltageData_AMI.csv')
+    voltageInputCust = M2TUtils.ConvertCSVtoNPY( filenameV )
+    
+    filenamePLE = Path(filePath,'PhaseLabelsErrors_AMI.csv')
+    phaseLabelsErrors = M2TUtils.ConvertCSVtoNPY( filenamePLE )
+    
+    filenameIDs = Path(filePath,'CustomerIDs_AMI.csv')    
+    with open(filenameIDs, 'r') as file:
+        custIDInput = [x.rstrip() for x in file]
 
     if useTrueLabelsFlag:
-        filename = Path(filePath,'PhaseLabelsTrue_AMI.npy')
-        phaseLabelsTrue = np.load(filename)
-
+        filenamePLT = Path(filePath,'PhaseLabelsTrue_AMI.csv')        
+        phaseLabelsTrue = M2TUtils.ConvertCSVtoNPY(filenamePLT)    
+    
     if useNumPhasesField:
-        filename = Path(filePath,'NumPhases.npy')
-        numPhasesInput = (np.array((np.load(filename)),dtype=int))
+        filenameNP = Path(filePath,'NumPhases.csv')        
+        numPhasesInput = M2TUtils.ConvertCSVtoNPY(filenameNP)   
+
+
 
 
 

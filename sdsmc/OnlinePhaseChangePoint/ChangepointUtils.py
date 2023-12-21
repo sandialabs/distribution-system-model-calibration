@@ -641,6 +641,15 @@ def updateWindowCtr(windowCtr, custID, currentIDs):
 # End of updateWindowCtr
 
 
+##############################################################################
+#
+#       ConvertCSVtoNPY
+#
 
+def ConvertCSVtoNPY( csv_file ):
+    dataSet = pd.read_csv( csv_file, header=None )
+    return np.array( pd.DataFrame(dataSet).values )
+
+# End ConvertCSVtoNPY function
 
 

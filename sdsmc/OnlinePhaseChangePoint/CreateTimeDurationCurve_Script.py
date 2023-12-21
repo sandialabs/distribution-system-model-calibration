@@ -61,94 +61,104 @@ else:
 #              Load Data and Set Path Names
 #                              
 
-if __name__ == 'main':
-  currentDirectory = Path.cwd()
-  filePath = Path(currentDirectory.parent,'SampleData')
-  filename = Path(filePath,'ChangePoint_CustIDs.npy')
-  groundtruthIDs = list(np.load(filename))  # The ID list for customers with true changepoints
-  filename = Path(filePath,'Changepoint_PhasesTimesteps.npy')
-  groundtruthTimesteps = np.array(np.load(filename),dtype=int) # The timestep and new phase of the true changepoints
-  filename = Path(filePath,'Changepoint_voltageData.npy')
-  voltageInputAll = np.load(filename) # AMI voltage timeseries for each customer
-  filename = Path(filePath,'ChangePoint_AllCustIDs.npy')
-  custIDs = list(np.load(filename)) # The customer IDs for all customers
-  filename = Path(filePath,'Changepoint_phaseLabels.npy')
-  phaseLabelsInputAll = np.load(filename) # The original, true phase labels for each customer
-
-  # Format ground truth labels as dictionaries
-  realEventsIDs = {}
-  realEventsPhases = {}
-  for custCtr in range(0,len(groundtruthIDs)):
-      currCust = groundtruthIDs[custCtr]
-      realEventsIDs[currCust] = groundtruthTimesteps[custCtr,0]
-      realEventsPhases[currCust] = groundtruthTimesteps[custCtr,1]
-
-  custIDInputAll = []
-  for custCtr in range(0,len(custIDs)):
-      custIDInputAll.append(str(custIDs[custCtr]))
-
-  # For creation of the time duration curve we omit the customers with changepoints
-  custIndices = []
-  for custCtr in range(0,len(groundtruthIDs)):
-      index = custIDInputAll.index(groundtruthIDs[custCtr])
-      custIndices.append(index)
-      
-  voltageInput = np.delete(voltageInputAll,custIndices,axis=1)
-  phaseLabelsInput=np.delete(phaseLabelsInputAll,custIndices,axis=1)
-  custIDInput = list(np.delete(np.array(custIDInputAll),custIndices))
-
-  saveResultsBasePath = currentDirectory
-
-  ###################################################################################
-  #
-  #
-  #  Monte Carlo with Measurement Noise, Missing data, and Incorrect Phase Labels Added
-  #
-  #
-
-  ## Run Monte Carlo Simulation
-  mislabeledCustsAll = []
-  cTPPOverTime_NoiseAll = []
-  numSims = 5
-  numSamples = voltageInput.shape[0]
-  windowSize = 384
-  numWindows = int(numSamples/windowSize)
-
-  print('Beginning Monte Carlo Simulations to Create Time Duration Curve')
-  for i in range(numSims):
-      print("################ Simulation " + str(i+1) + "/" + str(numSims) +" ###################")
-      
-      ### Inject missing labels
-      phaseLabelErrors = CPUtils.AddMisLabeledPhases(phaseLabelsInput, 10) #10% mislabeled
-      misLabeledCusts = CPUtils.identifyMislabeledCusts(phaseLabelsInput, phaseLabelErrors)    
-      noiseVoltage =  CPUtils.AddGaussianNoise(voltageInput, 0.07, 240, 100)
-      missVoltage = CPUtils.MissingData_VarInt(noiseVoltage, percentMissing=0.1, minmissingDataInterval=8, maxmissingDataInterval=96)
-      # Use shortened voltage timeseries for computation time - the first 3 months are enough to generate the full TDC    
-      newVoltage = CPUtils.ConvertToPerUnit_Voltage(missVoltage)
-      newVoltage = CPUtils.CalcDeltaVoltage(newVoltage)
+if __name__ == '__main__':
   
-      predictedPhasesAll, aggMatAll, possibleChangePointsAll, rankedPredictionsOverTime, misLabeledCusts, cTPPOverTime_Noise = OCF.run_TDCMonteCarlo(phaseLabelsInput,phaseLabelErrors,newVoltage,custIDInput,misLabeledCusts,savePath=saveResultsBasePath)
-      mislabeledCustsAll.append(misLabeledCusts)
-      cTPPOverTime_NoiseAll.append(cTPPOverTime_Noise)
-  print('Monte Carlo Simulatin Complete')
-  ################################################################################
-  #
-  #                  Create TD Curve from Noise Window Scores
-
-  # Fit curve parameters and save parameters
-  td_curve_params,noise_events_max = OCF.useMCResultsToFitTDCurve(cTPPOverTime_NoiseAll,savePath=str(saveResultsBasePath))
-  print('Saved Time Duration Curve Parameters to the working directory as td_curve_params.npy')
-  # Specify low confidence score truncation point
-  tdFlatLineCutoff = 0.5
-
-  # Create purely exponential curve to serve as the baseline for the Time Duration Curve
-  funct  = lambda x, a, b, c: a * np.exp(-b * x) + c
-  td_curveEXP = lambda x : funct(x , *td_curve_params)
-
-  # Conservatively shift and truncate the exponential curve to create the Time Duration Curve
-  # This is the curve used in the phase changepoint algorithm!
-  td_curve = lambda x : 0.99 if x == 2 else ( tdFlatLineCutoff if funct(x-1, *td_curve_params) <= tdFlatLineCutoff else funct(x-1, *td_curve_params))
-
-  # Plot TDC and exponential curve with noise points
-  #   The plot considers the event window to be window 0 as is in the paper.  i.e. easier to discuss in terms of 'event detected 2 windows after occurence. . . '
-  OCF.PlotTDC_SCATTERPLOT_EventWin2(noise_events_max,numWindows,numSims,td_curve,td_curveEXP,cTPPOverTime_NoiseAll,tdFlatLineCutoff,str(saveResultsBasePath))
+      
+    
+    currentDirectory = Path(__file__).parent.resolve()
+    filePath = Path(currentDirectory.parent,'SampleData')
+    filenameV = Path(filePath,'Changepoint_voltageData.csv')
+    voltageInputAll = M2TUtils.ConvertCSVtoNPY( filenameV )
+    
+    filenamePLE = Path(filePath,'Changepoint_phaseLabels.csv')
+    phaseLabelsInputAll = M2TUtils.ConvertCSVtoNPY( filenamePLE )
+    
+    filenameIDs = Path(filePath,'ChangePoint_CustIDs.csv')    
+    with open(filenameIDs, 'r') as file:
+        groundtruthIDs = [x.rstrip() for x in file]
+    
+    filenameIDs = Path(filePath,'ChangePoint_AllCustIDs.csv')    
+    with open(filenameIDs, 'r') as file:
+        custIDs = [x.rstrip() for x in file]
+      
+    filenameCPT= Path(filePath,'Changepoint_PhasesTimesteps.csv')        
+    groundtruthTimesteps = M2TUtils.ConvertCSVtoNPY(filenameCPT)    
+    
+    
+    # Format ground truth labels as dictionaries
+    realEventsIDs = {}
+    realEventsPhases = {}
+    for custCtr in range(0,len(groundtruthIDs)):
+        currCust = groundtruthIDs[custCtr]
+        realEventsIDs[currCust] = groundtruthTimesteps[custCtr,0]
+        realEventsPhases[currCust] = groundtruthTimesteps[custCtr,1]
+    
+    custIDInputAll = []
+    for custCtr in range(0,len(custIDs)):
+        custIDInputAll.append(str(custIDs[custCtr]))
+    
+    # For creation of the time duration curve we omit the customers with changepoints
+    custIndices = []
+    for custCtr in range(0,len(groundtruthIDs)):
+        index = custIDInputAll.index(groundtruthIDs[custCtr])
+        custIndices.append(index)
+        
+    voltageInput = np.delete(voltageInputAll,custIndices,axis=1)
+    phaseLabelsInput=np.delete(phaseLabelsInputAll,custIndices,axis=1)
+    custIDInput = list(np.delete(np.array(custIDInputAll),custIndices))
+    
+    saveResultsBasePath = currentDirectory
+    
+    ###################################################################################
+    #
+    #
+    #  Monte Carlo with Measurement Noise, Missing data, and Incorrect Phase Labels Added
+    #
+    #
+    
+    ## Run Monte Carlo Simulation
+    mislabeledCustsAll = []
+    cTPPOverTime_NoiseAll = []
+    numSims = 5
+    numSamples = voltageInput.shape[0]
+    windowSize = 384
+    numWindows = int(numSamples/windowSize)
+    
+    print('Beginning Monte Carlo Simulations to Create Time Duration Curve')
+    for i in range(numSims):
+        print("################ Simulation " + str(i+1) + "/" + str(numSims) +" ###################")
+        
+        ### Inject missing labels
+        phaseLabelErrors = CPUtils.AddMisLabeledPhases(phaseLabelsInput, 10) #10% mislabeled
+        misLabeledCusts = CPUtils.identifyMislabeledCusts(phaseLabelsInput, phaseLabelErrors)    
+        noiseVoltage =  CPUtils.AddGaussianNoise(voltageInput, 0.07, 240, 100)
+        missVoltage = CPUtils.MissingData_VarInt(noiseVoltage, percentMissing=0.1, minmissingDataInterval=8, maxmissingDataInterval=96)
+        # Use shortened voltage timeseries for computation time - the first 3 months are enough to generate the full TDC    
+        newVoltage = CPUtils.ConvertToPerUnit_Voltage(missVoltage)
+        newVoltage = CPUtils.CalcDeltaVoltage(newVoltage)
+    
+        predictedPhasesAll, aggMatAll, possibleChangePointsAll, rankedPredictionsOverTime, misLabeledCusts, cTPPOverTime_Noise = OCF.run_TDCMonteCarlo(phaseLabelsInput,phaseLabelErrors,newVoltage,custIDInput,misLabeledCusts,savePath=saveResultsBasePath)
+        mislabeledCustsAll.append(misLabeledCusts)
+        cTPPOverTime_NoiseAll.append(cTPPOverTime_Noise)
+    print('Monte Carlo Simulatin Complete')
+    ################################################################################
+    #
+    #                  Create TD Curve from Noise Window Scores
+    
+    # Fit curve parameters and save parameters
+    td_curve_params,noise_events_max = OCF.useMCResultsToFitTDCurve(cTPPOverTime_NoiseAll,savePath=str(saveResultsBasePath))
+    print('Saved Time Duration Curve Parameters to the working directory as td_curve_params.npy')
+    # Specify low confidence score truncation point
+    tdFlatLineCutoff = 0.5
+    
+    # Create purely exponential curve to serve as the baseline for the Time Duration Curve
+    funct  = lambda x, a, b, c: a * np.exp(-b * x) + c
+    td_curveEXP = lambda x : funct(x , *td_curve_params)
+    
+    # Conservatively shift and truncate the exponential curve to create the Time Duration Curve
+    # This is the curve used in the phase changepoint algorithm!
+    td_curve = lambda x : 0.99 if x == 2 else ( tdFlatLineCutoff if funct(x-1, *td_curve_params) <= tdFlatLineCutoff else funct(x-1, *td_curve_params))
+    
+    # Plot TDC and exponential curve with noise points
+    #   The plot considers the event window to be window 0 as is in the paper.  i.e. easier to discuss in terms of 'event detected 2 windows after occurence. . . '
+    OCF.PlotTDC_SCATTERPLOT_EventWin2(noise_events_max,numWindows,numSims,td_curve,td_curveEXP,cTPPOverTime_NoiseAll,tdFlatLineCutoff,str(saveResultsBasePath))
