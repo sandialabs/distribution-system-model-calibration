@@ -2,7 +2,7 @@
 
 ### Description
 
-The code in this library was developed by Sandia National Laboratories under funding provided by the U.S. Department of Energy Solar Energy Technologies Office as part of the project titled “Physics-Based Data-Driven grid Modelling to Accelerate Accurate PV Integration” Agreement Number 34226. More information about the project and resulting publications can be found at [https://www.researchgate.net/project/Intelligent-Model-Fidelity-IMoFi.](https://www.osti.gov/biblio/1855058)
+The code in this library was developed by Sandia National Laboratories under funding provided by the U.S. Department of Energy Solar Energy Technologies Office as part of the project titled “Physics-Based Data-Driven grid Modelling to Accelerate Accurate PV Integration” Agreement Number 34226. More information about the project can be found at [https://www.osti.gov/biblio/1855058.](https://www.osti.gov/biblio/1855058)
 
 Five distribution system model calibration algorithms are included in this release. There are two algorithms for performing phase identification: one based on an ensemble spectral clustering approach and one based on leveraging additional sensors placed on the medium voltage. Start with the CA_Ensemble_SampleScripts.py file and the SensorMethod_SampleScript.py file, respectively. The third and fourth algorithms identify the connection between service transformers and low-voltage customers (meter to transformer pairing algorithm).  The algorithms have different data requirements, P/Q/V/Labels and P/V/Labels/Distance respectively. Start with the MeterToTransPairingScripts.py file.  The fifth algorithm provides an online customer phase change detection algorithm.  Start with CreateTimeDurationCurve_Script.py.
 
