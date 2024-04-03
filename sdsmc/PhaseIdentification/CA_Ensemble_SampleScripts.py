@@ -114,10 +114,10 @@ if __name__ == '__main__':
     currentDirectory = Path(__file__).parent.resolve()
     filePath = Path(currentDirectory.parent,'SampleData')
     filenameV = Path(filePath,'VoltageData_AMI.csv')
-    voltageInputCust = M2TUtils.ConvertCSVtoNPY( filenameV )
+    voltageInputCust = PIUtils.ConvertCSVtoNPY( filenameV )
     
     filenamePLE = Path(filePath,'PhaseLabelsErrors_AMI.csv')
-    phaseLabelsErrors = M2TUtils.ConvertCSVtoNPY( filenamePLE )
+    phaseLabelsErrors = PIUtils.ConvertCSVtoNPY( filenamePLE )
     
     filenameIDs = Path(filePath,'CustomerIDs_AMI.csv')    
     with open(filenameIDs, 'r') as file:
@@ -125,11 +125,11 @@ if __name__ == '__main__':
 
     if useTrueLabelsFlag:
         filenamePLT = Path(filePath,'PhaseLabelsTrue_AMI.csv')        
-        phaseLabelsTrue = M2TUtils.ConvertCSVtoNPY(filenamePLT)    
+        phaseLabelsTrue = PIUtils.ConvertCSVtoNPY(filenamePLT)    
     
     if useNumPhasesField:
         filenameNP = Path(filePath,'NumPhases.csv')        
-        numPhasesInput = M2TUtils.ConvertCSVtoNPY(filenameNP)   
+        numPhasesInput = PIUtils.ConvertCSVtoNPY(filenameNP)   
 
 
 

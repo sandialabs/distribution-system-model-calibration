@@ -111,16 +111,16 @@ if __name__ == '__main__':
     currentDirectory = Path(__file__).parent.resolve()
     filePath = Path(currentDirectory.parent,'SampleData')
     filenameV = Path(filePath,'VoltageData_AMI.csv')
-    voltageInputCust = M2TUtils.ConvertCSVtoNPY( filenameV )
+    voltageInputCust = PIUtils.ConvertCSVtoNPY( filenameV )
 
     filenameVS = Path(filePath,'VoltageData_Sensor.csv')
-    voltageInputSens = M2TUtils.ConvertCSVtoNPY( filenameVS )
+    voltageInputSens = PIUtils.ConvertCSVtoNPY( filenameVS )
 
     filenamePLS = Path(filePath,'PhaseLabels_Sensor.csv')
-    sensPhases = M2TUtils.ConvertCSVtoNPY( filenamePLS )
+    sensPhases = PIUtils.ConvertCSVtoNPY( filenamePLS )
     
     filenamePLE = Path(filePath,'PhaseLabelsErrors_AMI.csv')
-    phaseLabelsErrors = M2TUtils.ConvertCSVtoNPY( filenamePLE )
+    phaseLabelsErrors = PIUtils.ConvertCSVtoNPY( filenamePLE )
     
     filenameIDs = Path(filePath,'CustomerIDs_AMI.csv')    
     with open(filenameIDs, 'r') as file:
@@ -131,7 +131,7 @@ if __name__ == '__main__':
         sensIDs = [x.rstrip() for x in file]
 
     filenamePLT = Path(filePath,'PhaseLabelsTrue_AMI.csv')        
-    phaseLabelsTrue = M2TUtils.ConvertCSVtoNPY(filenamePLT)    
+    phaseLabelsTrue = PIUtils.ConvertCSVtoNPY(filenamePLT)    
     
    
 
