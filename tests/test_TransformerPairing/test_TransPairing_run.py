@@ -27,5 +27,5 @@ def test_transformerPairing_run():
         transformerLabelsTruePath = Path(sampleDataDirectory, 'TransformerLabelsTrue_AMI.csv' )
     TransformerPairing.run( voltageInputPathCSV, realPowerInputPathCSV, reactivePowerInputPathCSV, custIDInputPathCSV, transformerLabelsErrorsPathCSV, transformerLabelsTruePath, saveResultsPath, useTrueLabels )
 
-    assert os.path.exists("outputs_ChangedCustomers_M2T.csv") == True
-    assert os.path.exists("outputs_ImprovementStats.csv") == True
+    assert Path( currentDirectory, "outputs_ChangedCustomers_M2T.csv").exists() == True
+    assert Path( currentDirectory, "outputs_ImprovementStats.csv").exists() == True
