@@ -14,6 +14,6 @@ jobs:
           python -m pip install git+https://github.com/sandialabs/distribution-system-model-calibration
           pip install pytest
       - name: Test with PyTest
-          run: |
-            echo "Testing tests/test_TransformerPairing/test_TransformerPairing_run.py"
-            pytest tests/test_TransformerPairing/test_TransformerPairing_run.py
+        run: |
+          echo "Testing tests/test_TransformerPairing/test_TransformerPairing_run.py"
+          pytest tests/test_TransformerPairing/test_TransformerPairing_run.py
