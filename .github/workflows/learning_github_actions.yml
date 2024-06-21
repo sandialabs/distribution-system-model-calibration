@@ -1,9 +1,31 @@
-name: learn-github-actions
-run-name: ${{ github.actor }} is learning GitHub Actions
+name: Learn GA - Test with PyTest
+run-name: ${{ github.actor }} running pytests
 on: [push]
 jobs:
+  job-name-0:
+    name: Installing SDSMC
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install SDSMC
+        run: |
+          python3 -m pip install --upgrade pip
+          python -m pip install git+https://github.com/sandialabs/distribution-system-model-calibration
   job-name-1:
-    name: Name That You See - Hi!
+    name: Run Pytest
     runs-on: ubuntu-20.04 #OMF Runs on ubuntu 20.04 - so I'd rather use this version.
     steps: #Steps for this job
-      - uses: actions/checkout@v4 # this is almost always there. this checks out my code so I run tests against it
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest 
+      - name: Testing Python files
+        run: |
+          for file in $( find tests -name '*.py'); do
+              echo "Testing $file"
+              pytest $file
+            fi
+          done
