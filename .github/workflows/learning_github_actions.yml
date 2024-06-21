@@ -15,5 +15,5 @@ jobs:
           pip install pytest
       - name: Test with PyTest
         run: |
-          echo "Testing tests/test_TransformerPairing/test_TransformerPairing_run.py"
-          pytest tests/test_TransformerPairing/test_TransformerPairing_run.py
+          echo "Testing tests/test_TransformerPairing/test_TransPairing_run.py"
+          pytest tests/test_TransformerPairing/test_TransPairing_run.py
