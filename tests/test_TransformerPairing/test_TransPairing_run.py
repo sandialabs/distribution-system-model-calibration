@@ -12,8 +12,11 @@ from sdsmc.MeterTransformerPairing import TransformerPairing
 def test_transformerPairing_run():
     useTrueLabels = True
 
-    sampleDataDirectory = Path( "../../sdsmc/SampleData/")
-    saveResultsPath = Path("./")
+    # Relative pathing setup
+    currentDirectory = Path(__file__).parent.resolve()
+    sampleDataDirectory = Path( currentDirectory.parent.parent, 'sdsmc/SampleData')
+    saveResultsPath = currentDirectory
+
     voltageInputPathCSV = Path( sampleDataDirectory, "voltageData_AMI.csv")
     realPowerInputPathCSV = Path( sampleDataDirectory, "realPowerData_AMI.csv")
     custIDInputPathCSV = Path( sampleDataDirectory, "CustomerIDs_AMI.csv")
