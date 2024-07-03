@@ -1,9 +1,9 @@
-name: Learn GA - Test with PyTest
-run-name: ${{ github.actor }} running pytests
+name: Baseline CD - Test with unittest
+run-name: ${{ github.actor }} running SDSMC + unittest
 on: [push]
 jobs:
-  job-name-0:
-    name: Installing SDSMC
+  job-0:
+    name: Installing and Testing SDSMC
     runs-on: ubuntu-20.04
     steps:
       - name: Checkout code
@@ -12,8 +12,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python -m pip install git+https://github.com/sandialabs/distribution-system-model-calibration
-          pip install pytest
-      - name: Test with PyTest
+          pip install unittest
+      - name: Test TransformerPairing with unittest
         run: |
-          echo "Testing tests/test_TransformerPairing/test_TransPairing_run.py"
-          pytest tests/test_TransformerPairing/test_TransPairing_run.py
+          python3 -m unittest discover -v tests/test_TransformerPairing/test_*.py
