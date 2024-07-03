@@ -14,4 +14,4 @@ jobs:
           python -m pip install git+https://github.com/sandialabs/distribution-system-model-calibration
       - name: Test TransformerPairing with unittest
         run: |
-          python3 -m unittest discover -v tests/test_TransformerPairing/test_*.py
+          python3 -m unittest -v tests/test_TransformerPairing/test_*.py
