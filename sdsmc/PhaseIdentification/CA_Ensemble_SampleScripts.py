@@ -147,8 +147,10 @@ if __name__ == '__main__':
     # Data pre-processing steps
     # This converts the original voltage timeseries (assumed to be in volts) into per-unit representation
     vNorm = PIUtils.ConvertToPerUnit_Voltage(voltageInputCust)
+    # This filters the timeseries for abnormally high or low voltage values and replaces them with NaN
+    vFilt,totalFilt,filtPerCust = PIUtils.BadDataFiltering(vNorm)
     # This takes the difference between adjacent measurements, converting the timeseries into a per-unit, change in voltage timeseries
-    vNDV = PIUtils.CalcDeltaVoltage(vNorm)
+    vNDV = PIUtils.CalcDeltaVoltage(vFilt)
 
     # Check that all datastreams have unique IDs
     if useNumPhasesField:

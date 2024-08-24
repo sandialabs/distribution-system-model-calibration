@@ -1388,3 +1388,63 @@ def ConvertCSVtoNPY( csv_file ):
     return np.array( pd.DataFrame(dataSet).values )
 
 # End ConvertCSVtoNPY function      
+
+
+
+
+##############################################################################
+#
+#       BadDataFiltering
+#    
+def BadDataFiltering(timeseries,highValue=1.1,lowValue=0.8):
+    ''' This function takes a array of timeseries with high and low thresholds
+        and any values outside of those thresholds become NaN.  The timeseries
+        values MUST be in per-unit if you use the default thresholds.
+        
+        Parameters
+        ---------
+            timeseries: ndarray of float (measurements,customers) - the 
+                timeseries to filter
+            highValue: float - the upper threshold.  The default is 1.1, 
+                which gives a 10% variation off of the norm.  This default 
+                works well for being conservative on throwing out values 
+                 for voltage because within 5% is acceptable per standards, so
+                 this is double the acceptable range
+            lowValue: float - the lower threshold.  The default is 0.8, 
+                         
+        Returns
+        -------
+            filteredTimeseries: ndarray of float (measurements,customers) 
+                the filtered timeseries.  Any values outside of the thresholds
+                replaced with NaN
+            nanCount: int - the total number of values filtered
+            nanCountPerCust: list of int - the number of values filtered per
+                customer
+        '''
+        
+    filteredTimeseries = deepcopy(timeseries)
+    nanCount = 0
+    nanCountPerCust = []
+    for custCtr in range(0,timeseries.shape[1]):
+        currCol = filteredTimeseries[:,custCtr]
+        indices = np.where(currCol>=highValue)[0]
+        indices2 = np.where(currCol<=lowValue)[0]
+        allIndices = np.concatenate((indices,indices2))
+        nans = len(allIndices)
+        currCol[allIndices] = np.nan
+        filteredTimeseries[:,custCtr] = currCol
+        nanCount = nanCount + nans
+        nanCountPerCust.append(nans)
+        
+    return filteredTimeseries, nanCount, nanCountPerCust
+# End of BadDataFiltering
+    
+
+
+
+
+
+
+
+
+
