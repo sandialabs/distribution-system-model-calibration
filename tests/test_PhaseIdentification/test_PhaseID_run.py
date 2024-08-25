@@ -25,11 +25,11 @@ class TestingSDSMC( unittest.TestCase ):
 			phaseLabelsTrue = Path( sampleDataDirectory, 'PhaseLabelsTrue_AMI.csv')
 			numPhases = Path( sampleDataDirectory, 'NumPhases.csv')
 
-			PhaseIdentification_CAEnsemble.run( sampleInputPathCSV, phaseLabelsTrue_csv=phaseLabelsTrue, numPhases_csv=numPhases, saveResultsPath=Path(currentDirectory, 'test_output.csv') )
+			PhaseIdentification_CAEnsemble.run( sampleInputPathCSV, phaseLabelsTrue_csv=phaseLabelsTrue, numPhases_csv=numPhases, saveResultsPath=Path(currentDirectory, 'outputs_phaseID_test.csv') )
 			# Test all necessary files are there and under the right name.
 
 			self.assertTrue( Path( currentDirectory, "ModifiedSC_HIST.png").exists() )
-			self.assertTrue( Path( currentDirectory, "test_output.csv").exists() )
+			self.assertTrue( Path( currentDirectory, "outputs_phaseID_test.csv").exists() )
 
 			# Test some values as a sanity check to ensure the calculations were correct.
 

@@ -15,3 +15,6 @@ jobs:
       - name: Test TransformerPairing with unittest
         run: |
           python3 -m unittest -v tests/test_TransformerPairing/test_*.py
+      - name: Test PhaseIdentification with unittest
+        run: |
+          python3 -m unittest -v tests/test_PhaseIdentification/test_*.py
