@@ -75,7 +75,7 @@ def ConvertToPerUnit_Voltage(timeseries):
         '''
     
     voltageMismatchThresh = .8
-    voltageLevels = np.array([120,240,7200])
+    voltageLevels = np.array([120, 208, 277, 240, 480, 7200])
     voltagePU = np.zeros((timeseries.shape),dtype=float)
     dataLength = timeseries.shape[0]
     
