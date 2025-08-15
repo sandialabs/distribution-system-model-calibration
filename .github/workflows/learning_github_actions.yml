@@ -1,0 +1,20 @@
+name: Baseline CD - Test with unittest
+run-name: ${{ github.actor }} running SDSMC + unittest
+on: [push]
+jobs:
+  job-0:
+    name: Installing and Testing SDSMC
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install SDSMC
+        run: |
+          python3 -m pip install --upgrade pip
+          python -m pip install git+https://github.com/sandialabs/distribution-system-model-calibration
+      - name: Test TransformerPairing with unittest
+        run: |
+          python3 -m unittest -v tests/test_TransformerPairing/test_*.py
+      - name: Test PhaseIdentification with unittest
+        run: |
+          python3 -m unittest -v tests/test_PhaseIdentification/test_*.py

@@ -12,3 +12,7 @@
 **/results.csv
 
 LoganScratchpad.py
+
+tests/test_*/*.pkl
+tests/test_*/outputs_*.csv
+tests/test_*/*.png

@@ -97,7 +97,7 @@ else:
 #
 #                           PhaseIdentification_CAEnsemble
 #
-def run( voltageData_AMI: str, customerIDs_AMI: str, phaseLabelErrors_csv: str, phaseLabelsTrue_csv: str, numPhases_csv: str, saveResultsPath: PosixPath, useTrueLabelsFlag: bool = True, useNumPhasesField: bool = True ):
+def run( mainInputData_AMI: str, phaseLabelsTrue_csv: str, numPhases_csv: str, saveResultsPath: PosixPath, kFinal: int=7, windowSize: int = 384, useTrueLabelsFlag: bool = True, useNumPhasesField: bool = True):
     """   This function is a wrapper for the CA_Ensemble_SampleScripts.py file.
 
           Note that the indexing of all variables above should match in the 
@@ -106,12 +106,10 @@ def run( voltageData_AMI: str, customerIDs_AMI: str, phaseLabelErrors_csv: str, 
 
           Parameters
           ---------
-            voltageData_AMI: CSV of float (measurements,customers) - the raw 
-                voltage AMI measurements for each customer in Volts
-            customerIDs_AMI: list of str (customers) - the list of customer 
-                IDs as strings
-            phaseLabelErrors_csv: CSV of int (1,customers) - the phase labels 
-                for each customer which may contain errors.
+            mainInputData_AMI: ( TODO: Redo this comment as this will be redesigned to take one input and it'll get broken into the 3 in the function)
+                - CSV of float (measurements,customers) - the raw voltage AMI measurements for each customer in Volts
+                - list of str (customers) - the list of customer IDs as strings
+                - CSV of int (1,customers) - the phase labels for each customer which may contain errors.
             phaseLabelsTrue_csv: CSV of int (1,customers) - the phase labels 
                 for each customer as integers.  This is the ground truth 
                 phase labels
@@ -148,20 +146,18 @@ def run( voltageData_AMI: str, customerIDs_AMI: str, phaseLabelErrors_csv: str, 
     # Data pre-processing
     # Convert CSV input files to numpy arrays
     # Open customerIDs file -> List
-    
-    voltageInputCust = PIUtils.ConvertCSVtoNPY( voltageData_AMI )
-    
-    phaseLabelsErrors = PIUtils.ConvertCSVtoNPY( phaseLabelErrors_csv )
-     
-    with open(customerIDs_AMI, 'r') as file:
-        custIDInput = [x.rstrip() for x in file]
+
+    raw_data = pd.read_csv( mainInputData_AMI )
+
+    voltageInputCust = raw_data.iloc[1:].to_numpy(dtype=float)
+    phaseLabelsErrors = raw_data.iloc[0].to_numpy(dtype=int).reshape(1,voltageInputCust.shape[1])
+    custIDInput = list(raw_data.columns)
 
     if useTrueLabelsFlag:
         phaseLabelsTrue = PIUtils.ConvertCSVtoNPY(phaseLabelsTrue_csv)    
     
     if useNumPhasesField:
         numPhasesInput = PIUtils.ConvertCSVtoNPY(numPhases_csv)   
-
 
     ##############################################################################
     ###############################################################################
@@ -171,12 +167,13 @@ def run( voltageData_AMI: str, customerIDs_AMI: str, phaseLabelErrors_csv: str, 
     #                   
     #
 
-
     # Data pre-processing steps
     # This converts the original voltage timeseries (assumed to be in volts) into per-unit representation
     vNorm = PIUtils.ConvertToPerUnit_Voltage(voltageInputCust)
+
+    vFilt,totalFilt,filtPerCust = PIUtils.BadDataFiltering(vNorm)
     # This takes the difference between adjacent measurements, converting the timeseries into a per-unit, change in voltage timeseries
-    vNDV = PIUtils.CalcDeltaVoltage(vNorm)
+    vNDV = PIUtils.CalcDeltaVoltage(vFilt)
 
     # Check that all datastreams have unique IDs
     if useNumPhasesField:
@@ -191,13 +188,16 @@ def run( voltageData_AMI: str, customerIDs_AMI: str, phaseLabelErrors_csv: str, 
     #   regulators, or other topology issues may require tuning of this parameter.
     #   This could be done using silhouette score analysis.  7 is likely a good
     #   place to start with this parameter.
-    kFinal=7
+    kFinal=kFinal
 
     # kVector is the number of clusters used internally by the algorithm in each 
     #   window.  
     kVector =[6,12,15,30]
     # windowSize is the number of datapoints used in each window of the ensemble
-    windowSize = 384
+    if windowSize == 'default':
+        windowSize = 384
+    else:
+        windowSize = int(windowSize)
 
     # This is the primary phase identification function - See documentation in CA_Ensemble_Funcs.py for details on the inputs/outputs
     finalClusterLabels,noVotesIndex,noVotesIDs,clusteredIDs,caMatrix,custWindowCounts = CAE.CAEnsemble(vNDV,kVector,kFinal,custIDUnique,windowSize,numPhases=numPhases)
@@ -242,7 +242,7 @@ def run( voltageData_AMI: str, customerIDs_AMI: str, phaseLabelErrors_csv: str, 
 
     # Calculate and Plot the confidence scores - Modified Silhouette Coefficients
     allSC = PIUtils.Calculate_ModifiedSilhouetteCoefficients(caMatrix,clusteredIDs,finalClusterLabels,predictedPhases,kFinal)
-    PIUtils.Plot_ModifiedSilhouetteCoefficients(allSC)
+    PIUtils.Plot_ModifiedSilhouetteCoefficients(allSC, savePath=saveResultsPath.parent.resolve())
 
     # Create output list which includes any customers omitted from the analysis due to missing data 
     # Those customers will be at the end of the list and have a predicted phase and silhouette coefficient of -99 to indicate that they were not included in the analysis
@@ -250,8 +250,6 @@ def run( voltageData_AMI: str, customerIDs_AMI: str, phaseLabelErrors_csv: str, 
         phaseLabelsOrg_FullList, phaseLabelsPred_FullList,allFinalClusterLabels, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,finalClusterLabels,clusteredIDs,custIDUnique,noVotesIDs,predictedPhases,allSC,phaseLabelsTrue=phaseLabelsTrue)
     else:
         phaseLabelsOrg_FullList, phaseLabelsPred_FullList,allFinalClusterLabels, phaseLabelsTrue_FullList,custID_FullList, allSC_FullList = PIUtils.CreateFullListCustomerResults_CAEns(clusteredPhaseLabels,phaseLabelsErrors,finalClusterLabels,clusteredIDs,custIDUnique,noVotesIDs,predictedPhases,allSC)
-
-
     # Write outputs to csv file
     df = pd.DataFrame()
     df['customer ID'] = custID_FullList
@@ -261,13 +259,9 @@ def run( voltageData_AMI: str, customerIDs_AMI: str, phaseLabelErrors_csv: str, 
         df['Actual Phase Labels'] = phaseLabelsTrue_FullList[0,:]
     df['Confidence Score'] = allSC_FullList
     df['Final Cluster Label'] = allFinalClusterLabels
-    df.to_csv('outputs_CAEnsMethod.csv')
+    df.to_csv(saveResultsPath)
     print('')
-    print('Predicted phase labels written to outputs_CAEnsMethod.csv')
+    print(f'Predicted phase labels written to {saveResultsPath}')
     
     
 # End of PhaseIdentification_CAEnsemble
-    
-    
-    
-    

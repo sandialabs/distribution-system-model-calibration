@@ -76,13 +76,13 @@ if __name__ == '__main__':
     # Load Sample data
     currentDirectory = Path(__file__).parent.resolve()
     filePath = Path(currentDirectory.parent,'SampleData')
-    filenameV = Path(filePath,'VoltageData_AMI.csv')
+    filenameV = Path(filePath,'voltageData_AMI.csv')
     voltageInput = M2TUtils.ConvertCSVtoNPY( filenameV )
     
-    filenameP = Path(filePath,'RealPowerData_AMI.csv')
+    filenameP = Path(filePath,'realPowerData_AMI.csv')
     pDataInput = M2TUtils.ConvertCSVtoNPY( filenameP )
     
-    filenameQ = Path(filePath,'ReactivePowerData_AMI.csv')
+    filenameQ = Path(filePath,'reactivePowerData_AMI.csv')
     qDataInput = M2TUtils.ConvertCSVtoNPY( filenameQ )
     
     filenameIDs = Path(filePath,'CustomerIDs_AMI.csv')    

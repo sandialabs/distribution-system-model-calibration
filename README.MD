@@ -27,9 +27,9 @@ To execute, for example, the Meter Transformer Pairing analytic:
 ```python
 import sdsmc
 
-from sdsmc.TransformerPairing.MeterTransformerPairing import transformerPairing
+from sdsmc.MeterTransformerPairing import TransformerPairing
 
-transformerPairing(
+TransformerPairing.run(
     voltageData_AMI,
     realPowerData_AMI,
     reactivePowerData_AMI,
