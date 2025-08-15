@@ -44,6 +44,7 @@ import seaborn as sns
 from pathlib import Path
 import datetime
 from scipy import stats
+import scipy
 import pandas as pd
 
 ###############################################################################
@@ -431,7 +432,12 @@ def CalcPredictedPhaseNoLabels(finalClusterLabels, clusteredPhaseLabelErrors,clu
         currentCluster = uniqueClusters[clustCtr]
         indices1 = np.where(finalClusterLabels==currentCluster)[0]     
         clusterPhases = clusteredPhaseLabelErrors[0,indices1]
-        pPhase = stats.mode(clusterPhases)[0][0]
+        versionS = scipy.__version__
+        versionKey = int(versionS.split('.')[1])
+        if versionKey >= 9:
+            pPhase = stats.mode(clusterPhases,keepdims=True).mode.item()
+        else:
+            pPhase = stats.mode(clusterPhases)[0][0]
         predictedPhases[0,indices1] = pPhase        
 
     return predictedPhases
