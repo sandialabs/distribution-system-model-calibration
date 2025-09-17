@@ -9,6 +9,7 @@
 **/ChangedCustomers_M2T_NoQ.csv
 **/outputs_CAEnsMethod.csv
 **/outputs_SensorMethod.csv
+**/outputs_PerUnitVoltages.csv
 **/results.csv
 
 LoganScratchpad.py

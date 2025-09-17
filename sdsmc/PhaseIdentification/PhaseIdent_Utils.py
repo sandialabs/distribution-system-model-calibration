@@ -51,7 +51,7 @@ import pandas as pd
 #
 # ConvertToPerUnit_Voltage
 #
-def ConvertToPerUnit_Voltage(timeseries):
+def ConvertToPerUnit_Voltage(timeseries,vLevel=0.0):
     ''' This function takes a voltage timeseries and converts it into a per
             unit representation.  This function looks at each customer's 
             timeseries individual mean, rounds the mean of the measurements and 
@@ -68,6 +68,10 @@ def ConvertToPerUnit_Voltage(timeseries):
         ----------
             timeseries: numpy array of float (measurements,customers) - the 
                 raw AMI voltage measurements
+            vLevel: the voltage level for the per-unit calculation.  If it is 
+                not specified, the customers will be matched with the default
+                levels in the voltageLevels variable below.  If it is specified
+                it will be used for all customers.
 
         Returns:
             voltagePU: numpy array of float (measurements,customers) -  the 
@@ -88,17 +92,25 @@ def ConvertToPerUnit_Voltage(timeseries):
             voltagePU[:,custCtr] = currentCust
             continue
         else:
-            meanValue = np.round(np.nanmean(currentCust),decimals=0)
-            vDiff = np.abs(voltageLevels - meanValue)
-            index = np.argmin(vDiff)
             
-            if index == 0:
-                print('Customer index ' + str(custCtr) + ' is a 120V customer')
-            # Check for the case where the correct voltage level is not listed
-            if np.abs(vDiff[index]) > (voltageMismatchThresh*voltageLevels[index]):
-                print('Error!  Customer# ' + str(custCtr) + 'has a mean voltage value of ' + str(meanValue) + '.  This voltage level is not supported in the function.  Please add this voltage level to the source code of the function')
-                return (-1)
-            voltagePU[:,custCtr] = np.divide(currentCust, voltageLevels[index])
+            # if no voltage level is specified
+            if vLevel == 0:
+                meanValue = np.round(np.nanmean(currentCust),decimals=0)
+                vDiff = np.abs(voltageLevels - meanValue)
+                index = np.argmin(vDiff)
+                
+                if index == 0:
+                    print('Customer index ' + str(custCtr) + ' is a 120V customer')
+                # Check for the case where the correct voltage level is not listed
+                if np.abs(vDiff[index]) > (voltageMismatchThresh*voltageLevels[index]):
+                    print('Error!  Customer# ' + str(custCtr) + 'has a mean voltage value of ' + str(meanValue) + '.  This voltage level is not supported in the function.  Please add this voltage level to the source code of the function')
+                    return (-1)
+                puLevel = voltageLevels[index]
+            
+            # use given voltage level
+            else:
+                puLevel = deepcopy(vLevel)
+            voltagePU[:,custCtr] = np.divide(currentCust, puLevel)
     return voltagePU
 # End of ConvertToPerUnit_Voltage
 

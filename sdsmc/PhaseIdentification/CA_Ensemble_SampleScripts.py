@@ -106,6 +106,12 @@ if __name__ == '__main__':
     # This script has the ability to compare the predicted labels to the true labels.  
     #   If true labels are available set this flag True (as in the provided sample data) otherwise set to False
     useTrueLabelsFlag = True
+    
+    
+    # This flag controls the saving of the calculated per unit voltages to csv if desired
+    #  The default is to not save the per unit voltages
+    savePerUnitVoltages = True
+    
 
     ##############################################################################
     #                    Load Sample Data
@@ -238,3 +244,9 @@ if __name__ == '__main__':
     df.to_csv('outputs_CAEnsMethod.csv')
     print('')
     print('Predicted phase labels written to outputs_CAEnsMethod.csv')
+    
+    # If flag set, save the calculated per-unit voltages to a csv file
+    if savePerUnitVoltages:
+        dfV = pd.DataFrame(vNorm)
+        dfV.to_csv('outputs_PerUnitVoltages.csv')
+    

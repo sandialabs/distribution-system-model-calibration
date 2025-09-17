@@ -97,7 +97,7 @@ else:
 #
 #                           PhaseIdentification_CAEnsemble
 #
-def run( mainInputData_AMI: str, phaseLabelsTrue_csv: str, numPhases_csv: str, saveResultsPath: PosixPath, kFinal: int=7, windowSize: int = 384, useTrueLabelsFlag: bool = True, useNumPhasesField: bool = True):
+def run( mainInputData_AMI: str, phaseLabelsTrue_csv: str, numPhases_csv: str, saveResultsPath: PosixPath, kFinal: int=7, windowSize: int = 384, useTrueLabelsFlag: bool = True, useNumPhasesField: bool = True,savePerUnitVoltages: bool = False,vLevel: float = 0.0):
     """   This function is a wrapper for the CA_Ensemble_SampleScripts.py file.
 
           Note that the indexing of all variables above should match in the 
@@ -118,12 +118,19 @@ def run( mainInputData_AMI: str, phaseLabelsTrue_csv: str, numPhases_csv: str, s
                 ground truth labels in the sample dataset
             useNumPhasesField: boolean value. the default is true since
                 the number of phases was supplied in the sample dataset
+            savePerUnitVoltages: boolean value.  The default is False, make true
+                if you would like to save the calculated per unit voltages as 
+                a csv file
+            vLevel: float Pass this parameter if you would like to use your own
+                value for the per unit voltage calculation.  Leaving it at the 
+                default will use the pre-determined list of voltage levels
 
           Returns
             Output files are prefixed with "outputs_"
             ---------
 
             outputs_CAEnsMethod.csv
+            outputs_PerUnitVoltage.csv (optional)
     """
 
     ##############################################################################
@@ -169,7 +176,7 @@ def run( mainInputData_AMI: str, phaseLabelsTrue_csv: str, numPhases_csv: str, s
 
     # Data pre-processing steps
     # This converts the original voltage timeseries (assumed to be in volts) into per-unit representation
-    vNorm = PIUtils.ConvertToPerUnit_Voltage(voltageInputCust)
+    vNorm = PIUtils.ConvertToPerUnit_Voltage(voltageInputCust,vLevel=vLevel)
 
     vFilt,totalFilt,filtPerCust = PIUtils.BadDataFiltering(vNorm)
     # This takes the difference between adjacent measurements, converting the timeseries into a per-unit, change in voltage timeseries
@@ -263,5 +270,12 @@ def run( mainInputData_AMI: str, phaseLabelsTrue_csv: str, numPhases_csv: str, s
     print('')
     print(f'Predicted phase labels written to {saveResultsPath}')
     
-    
+    # If flag set, save the calculated per-unit voltages to a csv file
+    if savePerUnitVoltages:
+        folderPath = saveResultsPath.parent.resolve()
+        filePath = Path(folderPath,'outputs_PerUnitVoltages.csv')
+        dfV = pd.DataFrame(vNorm)
+        dfV.to_csv(filePath)
+        print(f'Calculated Per-unit Voltages written to {filePath}')
+        
 # End of PhaseIdentification_CAEnsemble
